@@ -1,5 +1,5 @@
 import React, {useRef} from 'react';
-import {View, StyleSheet} from 'react-native';
+import {View, StyleSheet, Dimensions} from 'react-native';
 import {Camera, CameraRuntimeError} from 'react-native-vision-camera';
 import {observer} from 'mobx-react-lite';
 import {useStores} from '@stores/index';
@@ -40,6 +40,8 @@ const PowerShotSD1000Camera: React.FC<PowerShotSD1000CameraProps> = ({
     }
   };
 
+  console.log('Camera dimensions:', {width, height});
+
   return (
     <View style={styles.container}>
       {/* Camera Preview */}
@@ -55,7 +57,7 @@ const PowerShotSD1000Camera: React.FC<PowerShotSD1000CameraProps> = ({
         )}
       </View>
 
-      <PowerShotSD1000Skin width="100%" height="120%" />
+      <PowerShotSD1000Skin width={width} height={height} />
     </View>
   );
 };
@@ -77,5 +79,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
+
+const {width, height} = Dimensions.get('window');
 
 export default observer(PowerShotSD1000Camera);
