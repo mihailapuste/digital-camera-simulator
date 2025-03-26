@@ -1,25 +1,22 @@
-import React, {useCallback, useRef} from 'react';
+import React, {useEffect} from 'react';
 import {
-  StyleSheet,
   View,
   Text,
+  StyleSheet,
   TouchableOpacity,
-  StatusBar,
-  SafeAreaView,
-  Image,
   Alert,
+  Image,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
-import {
-  Camera,
-  useCameraDevice,
-  useCameraPermission,
-} from 'react-native-vision-camera';
-import {observer} from 'mobx-react-lite';
+import {useCameraDevice, useCameraPermission} from 'react-native-vision-camera';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
+import {observer} from 'mobx-react-lite';
+
 import {RootStackParamList} from '@navigation/types';
 import {useStores} from '@stores/index';
+import PowerShotSD1000Camera from '../components/PowerShotSD1000Camera';
 
 type CameraScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -30,46 +27,29 @@ const CameraScreen: React.FC = () => {
   const navigation = useNavigation<CameraScreenNavigationProp>();
   const {hasPermission, requestPermission} = useCameraPermission();
   const device = useCameraDevice('back');
-  const cameraRef = useRef<Camera>(null);
 
   // Get the camera store from our root store
   const {cameraStore} = useStores();
 
   // Request camera permissions on component mount
-  React.useEffect(() => {
-    if (!hasPermission) {
-      requestPermission();
-    }
+  useEffect(() => {
+    const checkPermission = async () => {
+      if (!hasPermission) {
+        await requestPermission();
+      }
+    };
+    checkPermission();
   }, [hasPermission, requestPermission]);
 
-  // Handle camera errors
-  const onError = useCallback((error: Error) => {
-    console.error('Camera error:', error);
-  }, []);
-
+  // Function to navigate to settings screen
   const navigateToSettings = () => {
     navigation.navigate('Settings');
   };
 
-  // Take a photo using the camera
-  const takePhoto = async () => {
-    try {
-      const imagePath = await cameraStore.takePhoto(cameraRef);
-      if (imagePath) {
-        console.log('Photo taken and saved to:', imagePath);
-      } else {
-        console.log('Failed to take photo');
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo');
-    }
-  };
-
-  // Save the last taken photo to the gallery
+  // Function to save the last taken photo to the gallery
   const saveToGallery = async () => {
     if (!cameraStore.lastImagePath) {
-      Alert.alert('No Photo', 'Take a photo first');
+      Alert.alert('Error', 'No photo to save');
       return;
     }
 
@@ -83,53 +63,45 @@ const CameraScreen: React.FC = () => {
         Alert.alert('Error', 'Failed to save photo to gallery');
       }
     } catch (error) {
+      Alert.alert('Error', 'An error occurred while saving the photo');
       console.error('Error saving to gallery:', error);
-      Alert.alert('Error', 'Failed to save photo to gallery');
     }
   };
 
-  // Render loading view while waiting for camera
-  if (device == null) {
+  // If no permission, show a message
+  if (!hasPermission) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Loading camera...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>
+            Camera permission is required to use this app
+          </Text>
+          <TouchableOpacity
+            style={styles.permissionButton}
+            onPress={requestPermission}>
+            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  // Render permission view if permissions not granted
-  if (!hasPermission) {
+  // If no device, show a message
+  if (!device) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.text}>
-          Camera permission is required to use the camera
-        </Text>
-        <TouchableOpacity
-          style={styles.permissionButton}
-          onPress={requestPermission}>
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>No camera device found</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
-      <Camera
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={true}
-        photo={true}
-        video={false}
-        audio={false}
-        onError={onError}
-      />
-
-      {/* Camera controls overlay */}
-      <View style={styles.controlsContainer}>
-        <TouchableOpacity style={styles.captureButton} onPress={takePhoto} />
+      {/* Main Camera Component with PowerShot Skin */}
+      <View style={styles.cameraContainer}>
+        <PowerShotSD1000Camera device={device} isActive={true} />
       </View>
 
       {/* Last image preview and save button */}
@@ -152,67 +124,71 @@ const CameraScreen: React.FC = () => {
         <Text style={styles.settingsButtonText}>⚙️</Text>
       </TouchableOpacity>
 
-      {/* Image gallery */}
+      {/* Gallery at the bottom */}
       {cameraStore.images.length > 0 && (
-        <View style={styles.galleryContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {cameraStore.images.map((imagePath, index) => (
-              <TouchableOpacity
-                key={`${imagePath}-${index}`}
-                onPress={() =>
-                  Alert.alert('Image Options', 'What would you like to do?', [
-                    {
-                      text: 'Delete',
-                      onPress: () => cameraStore.removeImage(imagePath),
-                      style: 'destructive',
-                    },
-                    {
-                      text: 'Save to Gallery',
-                      onPress: () => cameraStore.saveToGallery(imagePath),
-                    },
-                    {
-                      text: 'Cancel',
-                      style: 'cancel',
-                    },
-                  ])
-                }>
-                <Image
-                  source={{uri: `file://${imagePath}`}}
-                  style={styles.galleryImage}
-                />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <ScrollView horizontal style={styles.galleryContainer}>
+          {cameraStore.images.map((imagePath, index) => (
+            <TouchableOpacity
+              key={`${imagePath}-${index}`}
+              onPress={() =>
+                Alert.alert('Image Options', 'What would you like to do?', [
+                  {
+                    text: 'Delete',
+                    onPress: () => cameraStore.removeImage(imagePath),
+                    style: 'destructive',
+                  },
+                  {
+                    text: 'Save to Gallery',
+                    onPress: () => cameraStore.saveToGallery(imagePath),
+                  },
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
+                  },
+                ])
+              }>
+              <Image
+                source={{uri: `file://${imagePath}`}}
+                style={styles.galleryImage}
+              />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       )}
     </SafeAreaView>
   );
 };
-
-export default observer(CameraScreen);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'black',
   },
-  text: {
+  cameraContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionText: {
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
-    padding: 20,
+    marginBottom: 20,
   },
   permissionButton: {
     backgroundColor: '#2196F3',
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 50,
-    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
   },
   permissionButtonText: {
     color: 'white',
-    textAlign: 'center',
-    fontWeight: 'bold',
+    fontSize: 16,
   },
   controlsContainer: {
     position: 'absolute',
@@ -231,13 +207,39 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     borderColor: 'rgba(255, 255, 255, 0.5)',
   },
+  previewContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 10,
+    padding: 5,
+  },
+  imagePreview: {
+    width: 60,
+    height: 60,
+    borderRadius: 5,
+  },
+  saveButton: {
+    marginLeft: 10,
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 12,
+  },
   settingsButton: {
     position: 'absolute',
-    top: 50,
+    top: 20,
     right: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -245,45 +247,22 @@ const styles = StyleSheet.create({
   settingsButtonText: {
     fontSize: 24,
   },
-  previewContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 10,
-    padding: 5,
-    alignItems: 'center',
-  },
-  imagePreview: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  saveButton: {
-    marginTop: 5,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 12,
-  },
   galleryContainer: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 20,
     left: 0,
     right: 0,
     height: 80,
     paddingHorizontal: 10,
   },
   galleryImage: {
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
+    marginHorizontal: 5,
     borderRadius: 5,
-    marginRight: 10,
     borderWidth: 2,
     borderColor: 'white',
   },
 });
+
+export default observer(CameraScreen);
