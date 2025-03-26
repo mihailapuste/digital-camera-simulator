@@ -1,17 +1,19 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Image,
-  SafeAreaView,
   Dimensions,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
 import {useCameraDevice, useCameraPermission} from 'react-native-vision-camera';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {observer} from 'mobx-react-lite';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {RootStackParamList} from '@navigation/types';
 import {useStores} from '@stores/index';
@@ -29,6 +31,8 @@ const CameraScreen: React.FC = () => {
   const {hasPermission, requestPermission} = useCameraPermission();
   const device = useCameraDevice('back');
   const cameraRef = useRef<PowerShotSD1000CameraHandle>(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const insets = useSafeAreaInsets(); // Get safe area insets
 
   // Get the camera store from our root store
   const {cameraStore} = useStores();
@@ -56,6 +60,18 @@ const CameraScreen: React.FC = () => {
     }
   };
 
+  // Function to open the photo modal
+  const openPhotoModal = () => {
+    if (cameraStore.lastImagePath) {
+      setShowPhotoModal(true);
+    }
+  };
+
+  // Function to close the photo modal
+  const closePhotoModal = () => {
+    setShowPhotoModal(false);
+  };
+
   // If no permission, show a message
   if (!hasPermission) {
     return (
@@ -81,22 +97,38 @@ const CameraScreen: React.FC = () => {
     );
   }
 
+  // Fixed height for controls area
+  const controlsHeight = 120;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Main Camera Component with PowerShot Skin */}
-      <View style={styles.cameraContainer}>
-        <PowerShotSD1000Camera
-          ref={cameraRef}
-          device={device}
-          isActive={true}
-        />
+      <View style={[
+        styles.cameraContainer,
+        {
+          // Adjust for top and bottom safe areas
+          top: insets.top,
+          bottom: controlsHeight + insets.bottom,
+        },
+      ]}>
+        <PowerShotSD1000Camera ref={cameraRef} device={device} isActive={true} />
       </View>
 
-      {/* Bottom Controls Area */}
-      <SafeAreaView style={styles.bottomControlsWrapper}>
+      {/* Bottom Controls Area - Now with higher z-index */}
+      <View style={[
+        styles.bottomControlsWrapper,
+        {
+          // Adjust for bottom safe area
+          height: controlsHeight + insets.bottom,
+          paddingBottom: insets.bottom,
+        },
+      ]}>
         <View style={styles.bottomControlsContainer}>
           {/* Gallery Box (Left) */}
-          <View style={styles.galleryBox}>
+          <TouchableOpacity
+            style={styles.galleryBox}
+            onPress={openPhotoModal}
+            disabled={!cameraStore.lastImagePath}>
             {cameraStore.lastImagePath ? (
               <Image
                 source={{uri: `file://${cameraStore.lastImagePath}`}}
@@ -107,7 +139,7 @@ const CameraScreen: React.FC = () => {
                 <Text style={styles.placeholderText}>No Photos</Text>
               </View>
             )}
-          </View>
+          </TouchableOpacity>
 
           {/* Take Photo Button (Middle) */}
           <TouchableOpacity style={styles.takePhotoButton} onPress={takePhoto}>
@@ -121,14 +153,34 @@ const CameraScreen: React.FC = () => {
             <Text style={styles.settingsButtonText}>⚙️</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
+
+      {/* Photo Modal */}
+      <Modal
+        visible={showPhotoModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closePhotoModal}>
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={closePhotoModal}>
+            <Text style={styles.modalCloseButtonText}>✕</Text>
+          </TouchableOpacity>
+          {cameraStore.lastImagePath && (
+            <Image
+              source={{uri: `file://${cameraStore.lastImagePath}`}}
+              style={styles.modalImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
-const {height} = Dimensions.get('window');
-// Adjust camera height to account for safe area
-const cameraHeight = height * 0.8; // Match the height in PowerShotSD1000Camera
+const {width, height} = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -136,8 +188,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
   },
   cameraContainer: {
-    height: cameraHeight,
-    position: 'relative',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1, // Lower z-index for camera container
   },
   permissionContainer: {
     flex: 1,
@@ -167,9 +221,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    zIndex: 100, // Higher z-index to ensure controls are above everything
+    justifyContent: 'center',
   },
   bottomControlsContainer: {
     paddingHorizontal: 20,
+    paddingVertical: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -229,6 +286,36 @@ const styles = StyleSheet.create({
   },
   settingsButtonText: {
     fontSize: 24,
+  },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 200, // Highest z-index for the modal
+  },
+  modalImage: {
+    width: width * 0.9,
+    height: height * 0.7,
+    borderRadius: 10,
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  modalCloseButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
