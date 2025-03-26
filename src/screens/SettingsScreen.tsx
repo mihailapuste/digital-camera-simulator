@@ -12,7 +12,7 @@ import {observer} from 'mobx-react-lite';
 import {useNavigation} from '@react-navigation/native';
 import {useStores} from '@stores/index';
 
-const SettingsScreen = observer(() => {
+const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const {settingsStore} = useStores();
 
@@ -22,12 +22,11 @@ const SettingsScreen = observer(() => {
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+          onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
       </View>
-      
+
       <ScrollView style={styles.content}>
         <View style={styles.settingItem}>
           <Text style={styles.settingLabel}>Flash Mode</Text>
@@ -37,8 +36,7 @@ const SettingsScreen = observer(() => {
                 styles.optionButton,
                 settingsStore.flashMode === 'off' && styles.optionButtonActive,
               ]}
-              onPress={() => settingsStore.setFlashMode('off')}
-            >
+              onPress={() => settingsStore.setFlashMode('off')}>
               <Text style={styles.optionText}>Off</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -46,8 +44,7 @@ const SettingsScreen = observer(() => {
                 styles.optionButton,
                 settingsStore.flashMode === 'on' && styles.optionButtonActive,
               ]}
-              onPress={() => settingsStore.setFlashMode('on')}
-            >
+              onPress={() => settingsStore.setFlashMode('on')}>
               <Text style={styles.optionText}>On</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -55,8 +52,7 @@ const SettingsScreen = observer(() => {
                 styles.optionButton,
                 settingsStore.flashMode === 'auto' && styles.optionButtonActive,
               ]}
-              onPress={() => settingsStore.setFlashMode('auto')}
-            >
+              onPress={() => settingsStore.setFlashMode('auto')}>
               <Text style={styles.optionText}>Auto</Text>
             </TouchableOpacity>
           </View>
@@ -68,19 +64,19 @@ const SettingsScreen = observer(() => {
             <TouchableOpacity
               style={[
                 styles.optionButton,
-                settingsStore.cameraPosition === 'back' && styles.optionButtonActive,
+                settingsStore.cameraPosition === 'back' &&
+                  styles.optionButtonActive,
               ]}
-              onPress={() => settingsStore.setCameraPosition('back')}
-            >
+              onPress={() => settingsStore.setCameraPosition('back')}>
               <Text style={styles.optionText}>Back</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.optionButton,
-                settingsStore.cameraPosition === 'front' && styles.optionButtonActive,
+                settingsStore.cameraPosition === 'front' &&
+                  styles.optionButtonActive,
               ]}
-              onPress={() => settingsStore.setCameraPosition('front')}
-            >
+              onPress={() => settingsStore.setCameraPosition('front')}>
               <Text style={styles.optionText}>Front</Text>
             </TouchableOpacity>
           </View>
@@ -90,7 +86,7 @@ const SettingsScreen = observer(() => {
           <Text style={styles.settingLabel}>Save to Gallery</Text>
           <Switch
             value={settingsStore.saveToGallery}
-            onValueChange={(value) => settingsStore.setSaveToGallery(value)}
+            onValueChange={value => settingsStore.setSaveToGallery(value)}
             trackColor={{false: '#767577', true: '#2196F3'}}
             thumbColor={settingsStore.saveToGallery ? '#ffffff' : '#f4f3f4'}
           />
@@ -100,7 +96,7 @@ const SettingsScreen = observer(() => {
           <Text style={styles.settingLabel}>Grid Lines</Text>
           <Switch
             value={settingsStore.showGridLines}
-            onValueChange={(value) => settingsStore.setShowGridLines(value)}
+            onValueChange={value => settingsStore.setShowGridLines(value)}
             trackColor={{false: '#767577', true: '#2196F3'}}
             thumbColor={settingsStore.showGridLines ? '#ffffff' : '#f4f3f4'}
           />
@@ -108,7 +104,9 @@ const SettingsScreen = observer(() => {
       </ScrollView>
     </SafeAreaView>
   );
-});
+};
+
+export default observer(SettingsScreen);
 
 const styles = StyleSheet.create({
   container: {
@@ -168,5 +166,3 @@ const styles = StyleSheet.create({
     color: 'black',
   },
 });
-
-export default SettingsScreen;

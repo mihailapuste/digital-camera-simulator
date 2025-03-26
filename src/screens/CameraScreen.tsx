@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react';
+import React, {useCallback, useRef} from 'react';
 import {
   StyleSheet,
   View,
@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   StatusBar,
   SafeAreaView,
+  Image,
+  Alert,
+  ScrollView,
 } from 'react-native';
 import {
   Camera,
@@ -16,13 +19,21 @@ import {observer} from 'mobx-react-lite';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
+import {useStores} from '@stores/index';
 
-type CameraScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Camera'>;
+type CameraScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'Camera'
+>;
 
-const CameraScreen = observer(() => {
+const CameraScreen: React.FC = () => {
   const navigation = useNavigation<CameraScreenNavigationProp>();
   const {hasPermission, requestPermission} = useCameraPermission();
   const device = useCameraDevice('back');
+  const cameraRef = useRef<Camera>(null);
+
+  // Get the camera store from our root store
+  const {cameraStore} = useStores();
 
   // Request camera permissions on component mount
   React.useEffect(() => {
@@ -38,6 +49,43 @@ const CameraScreen = observer(() => {
 
   const navigateToSettings = () => {
     navigation.navigate('Settings');
+  };
+
+  // Take a photo using the camera
+  const takePhoto = async () => {
+    try {
+      const imagePath = await cameraStore.takePhoto(cameraRef);
+      if (imagePath) {
+        console.log('Photo taken and saved to:', imagePath);
+      } else {
+        console.log('Failed to take photo');
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  // Save the last taken photo to the gallery
+  const saveToGallery = async () => {
+    if (!cameraStore.lastImagePath) {
+      Alert.alert('No Photo', 'Take a photo first');
+      return;
+    }
+
+    try {
+      const success = await cameraStore.saveToGallery(
+        cameraStore.lastImagePath,
+      );
+      if (success) {
+        Alert.alert('Success', 'Photo saved to gallery');
+      } else {
+        Alert.alert('Error', 'Failed to save photo to gallery');
+      }
+    } catch (error) {
+      console.error('Error saving to gallery:', error);
+      Alert.alert('Error', 'Failed to save photo to gallery');
+    }
   };
 
   // Render loading view while waiting for camera
@@ -69,6 +117,7 @@ const CameraScreen = observer(() => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <Camera
+        ref={cameraRef}
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={true}
@@ -80,25 +129,67 @@ const CameraScreen = observer(() => {
 
       {/* Camera controls overlay */}
       <View style={styles.controlsContainer}>
-        <TouchableOpacity
-          style={styles.captureButton}
-          onPress={() => {
-            console.log('Photo button pressed');
-            // We'll implement photo capture in a safer way after basic camera works
-          }}
-        />
+        <TouchableOpacity style={styles.captureButton} onPress={takePhoto} />
       </View>
+
+      {/* Last image preview and save button */}
+      {cameraStore.lastImagePath ? (
+        <View style={styles.previewContainer}>
+          <Image
+            source={{uri: `file://${cameraStore.lastImagePath}`}}
+            style={styles.imagePreview}
+          />
+          <TouchableOpacity style={styles.saveButton} onPress={saveToGallery}>
+            <Text style={styles.saveButtonText}>Save to Gallery</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* Settings button */}
       <TouchableOpacity
         style={styles.settingsButton}
-        onPress={navigateToSettings}
-      >
+        onPress={navigateToSettings}>
         <Text style={styles.settingsButtonText}>⚙️</Text>
       </TouchableOpacity>
+
+      {/* Image gallery */}
+      {cameraStore.images.length > 0 && (
+        <View style={styles.galleryContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {cameraStore.images.map((imagePath, index) => (
+              <TouchableOpacity
+                key={`${imagePath}-${index}`}
+                onPress={() =>
+                  Alert.alert('Image Options', 'What would you like to do?', [
+                    {
+                      text: 'Delete',
+                      onPress: () => cameraStore.removeImage(imagePath),
+                      style: 'destructive',
+                    },
+                    {
+                      text: 'Save to Gallery',
+                      onPress: () => cameraStore.saveToGallery(imagePath),
+                    },
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                    },
+                  ])
+                }>
+                <Image
+                  source={{uri: `file://${imagePath}`}}
+                  style={styles.galleryImage}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
     </SafeAreaView>
   );
-});
+};
+
+export default observer(CameraScreen);
 
 const styles = StyleSheet.create({
   container: {
@@ -154,6 +245,45 @@ const styles = StyleSheet.create({
   settingsButtonText: {
     fontSize: 24,
   },
+  previewContainer: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 10,
+    padding: 5,
+    alignItems: 'center',
+  },
+  imagePreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  saveButton: {
+    marginTop: 5,
+    backgroundColor: '#4CAF50',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 12,
+  },
+  galleryContainer: {
+    position: 'absolute',
+    bottom: 120,
+    left: 0,
+    right: 0,
+    height: 80,
+    paddingHorizontal: 10,
+  },
+  galleryImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 5,
+    marginRight: 10,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
 });
-
-export default CameraScreen;

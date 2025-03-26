@@ -1,5 +1,6 @@
 import {types, Instance} from 'mobx-state-tree';
 import {SettingsStore} from './SettingsStore';
+import {CameraStore} from './CameraStore';
 
 /**
  * Root store that contains all the sub-stores for the application
@@ -8,6 +9,7 @@ export const RootStore = types
   .model('RootStore')
   .props({
     settingsStore: types.optional(SettingsStore, {}),
+    cameraStore: types.optional(CameraStore, {}),
   })
   .actions(_self => ({
     // Add any root-level actions here
@@ -22,5 +24,6 @@ export interface IRootStore extends Instance<typeof RootStore> {}
 export const createRootStore = () => {
   return RootStore.create({
     settingsStore: {},
+    cameraStore: {},
   });
 };
