@@ -85,44 +85,50 @@ const CameraScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* Main Camera Component with PowerShot Skin */}
       <View style={styles.cameraContainer}>
-        <PowerShotSD1000Camera ref={cameraRef} device={device} isActive={true} />
+        <PowerShotSD1000Camera
+          ref={cameraRef}
+          device={device}
+          isActive={true}
+        />
       </View>
 
       {/* Bottom Controls Area */}
-      <View style={styles.bottomControlsContainer}>
-        {/* Gallery Box (Left) */}
-        <View style={styles.galleryBox}>
-          {cameraStore.lastImagePath ? (
-            <Image
-              source={{uri: `file://${cameraStore.lastImagePath}`}}
-              style={styles.galleryBoxImage}
-            />
-          ) : (
-            <View style={styles.galleryBoxPlaceholder}>
-              <Text style={styles.placeholderText}>No Photos</Text>
-            </View>
-          )}
+      <SafeAreaView style={styles.bottomControlsWrapper}>
+        <View style={styles.bottomControlsContainer}>
+          {/* Gallery Box (Left) */}
+          <View style={styles.galleryBox}>
+            {cameraStore.lastImagePath ? (
+              <Image
+                source={{uri: `file://${cameraStore.lastImagePath}`}}
+                style={styles.galleryBoxImage}
+              />
+            ) : (
+              <View style={styles.galleryBoxPlaceholder}>
+                <Text style={styles.placeholderText}>No Photos</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Take Photo Button (Middle) */}
+          <TouchableOpacity style={styles.takePhotoButton} onPress={takePhoto}>
+            <View style={styles.takePhotoButtonInner} />
+          </TouchableOpacity>
+
+          {/* Settings Button (Right) */}
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={navigateToSettings}>
+            <Text style={styles.settingsButtonText}>⚙️</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Take Photo Button (Middle) */}
-        <TouchableOpacity style={styles.takePhotoButton} onPress={takePhoto}>
-          <View style={styles.takePhotoButtonInner} />
-        </TouchableOpacity>
-
-        {/* Settings Button (Right) */}
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={navigateToSettings}>
-          <Text style={styles.settingsButtonText}>⚙️</Text>
-        </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     </SafeAreaView>
   );
 };
 
 const {height} = Dimensions.get('window');
+// Adjust camera height to account for safe area
 const cameraHeight = height * 0.8; // Match the height in PowerShotSD1000Camera
-const bottomControlsHeight = height * 0.2; // Remaining 20% of screen height
 
 const styles = StyleSheet.create({
   container: {
@@ -155,11 +161,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
   },
-  bottomControlsContainer: {
-    height: bottomControlsHeight,
+  bottomControlsWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  bottomControlsContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
