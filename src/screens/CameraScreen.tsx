@@ -7,7 +7,6 @@ import {
   Image,
   Dimensions,
   Modal,
-  SafeAreaView,
 } from 'react-native';
 import {useCameraDevice, useCameraPermission} from 'react-native-vision-camera';
 import {useNavigation} from '@react-navigation/native';
@@ -20,6 +19,7 @@ import {useStores} from '@stores/index';
 import PowerShotSD1000Camera, {
   PowerShotSD1000CameraHandle,
 } from '../components/PowerShotSD1000Camera';
+import CameraControls from '../components/CameraControls';
 
 type CameraScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -97,63 +97,31 @@ const CameraScreen: React.FC = () => {
     );
   }
 
-  // Fixed height for controls area
-  const controlsHeight = 120;
-
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Main Camera Component with PowerShot Skin */}
       <View style={[
         styles.cameraContainer,
         {
-          // Adjust for top and bottom safe areas
+          // Respect safe area at the top
           top: insets.top,
-          bottom: controlsHeight + insets.bottom,
+          // Leave space for controls at the bottom
+          bottom: controlsHeight,
         },
       ]}>
-        <PowerShotSD1000Camera ref={cameraRef} device={device} isActive={true} />
+        <PowerShotSD1000Camera
+          ref={cameraRef}
+          device={device}
+          isActive={true}
+        />
       </View>
 
-      {/* Bottom Controls Area - Now with higher z-index */}
-      <View style={[
-        styles.bottomControlsWrapper,
-        {
-          // Adjust for bottom safe area
-          height: controlsHeight + insets.bottom,
-          paddingBottom: insets.bottom,
-        },
-      ]}>
-        <View style={styles.bottomControlsContainer}>
-          {/* Gallery Box (Left) */}
-          <TouchableOpacity
-            style={styles.galleryBox}
-            onPress={openPhotoModal}
-            disabled={!cameraStore.lastImagePath}>
-            {cameraStore.lastImagePath ? (
-              <Image
-                source={{uri: `file://${cameraStore.lastImagePath}`}}
-                style={styles.galleryBoxImage}
-              />
-            ) : (
-              <View style={styles.galleryBoxPlaceholder}>
-                <Text style={styles.placeholderText}>No Photos</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {/* Take Photo Button (Middle) */}
-          <TouchableOpacity style={styles.takePhotoButton} onPress={takePhoto}>
-            <View style={styles.takePhotoButtonInner} />
-          </TouchableOpacity>
-
-          {/* Settings Button (Right) */}
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={navigateToSettings}>
-            <Text style={styles.settingsButtonText}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Camera Controls Component */}
+      <CameraControls
+        onTakePhoto={takePhoto}
+        onOpenGallery={openPhotoModal}
+        onOpenSettings={navigateToSettings}
+      />
 
       {/* Photo Modal */}
       <Modal
@@ -176,11 +144,13 @@ const CameraScreen: React.FC = () => {
           )}
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const {width, height} = Dimensions.get('window');
+// Calculate control area height (approximately 20% of screen height)
+const controlsHeight = 120; // Fixed height for controls area
 
 const styles = StyleSheet.create({
   container: {
@@ -214,78 +184,6 @@ const styles = StyleSheet.create({
   permissionButtonText: {
     color: 'white',
     fontSize: 16,
-  },
-  bottomControlsWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    zIndex: 100, // Higher z-index to ensure controls are above everything
-    justifyContent: 'center',
-  },
-  bottomControlsContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  // Gallery Box (Left)
-  galleryBox: {
-    width: 70,
-    height: 70,
-    borderRadius: 10,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  galleryBoxImage: {
-    width: '100%',
-    height: '100%',
-  },
-  galleryBoxPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  // Take Photo Button (Middle)
-  takePhotoButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  takePhotoButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'white',
-  },
-  // Settings Button (Right)
-  settingsButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(33, 150, 243, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  settingsButtonText: {
-    fontSize: 24,
   },
   // Modal Styles
   modalContainer: {

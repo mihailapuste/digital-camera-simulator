@@ -3,7 +3,7 @@ import {View, StyleSheet, Dimensions, SafeAreaView} from 'react-native';
 import {Camera, CameraRuntimeError} from 'react-native-vision-camera';
 import {observer} from 'mobx-react-lite';
 import {useStores} from '@stores/index';
-import RotatedPowerShotSD1000Skin from '../cameraSkins/RotatedPowerShotSD1000Skin';
+import RotatedPowerShotSD1000Skin from '../CameraSkins/RotatedPowerShotSD1000Skin';
 
 interface PowerShotSD1000CameraProps {
   device: any;
@@ -63,7 +63,11 @@ const PowerShotSD1000Camera = forwardRef<
         <RotatedPowerShotSD1000Skin width={width} height={height} />
       </View>
       {/* Camera Preview Layer (Top) */}
-      <View style={[styles.cameraContainer, {width: cameraWidth, height: cameraHeight}]}>
+      <View
+        style={[
+          styles.cameraContainer,
+          {width: cameraWidth, height: cameraHeight},
+        ]}>
         {device && (
           <Camera
             ref={cameraRef}
