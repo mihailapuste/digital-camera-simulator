@@ -100,15 +100,16 @@ const CameraScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Main Camera Component with PowerShot Skin */}
-      <View style={[
-        styles.cameraContainer,
-        {
-          // Respect safe area at the top
-          top: insets.top,
-          // Leave space for controls at the bottom
-          bottom: controlsHeight,
-        },
-      ]}>
+      <View
+        style={[
+          styles.cameraContainer,
+          {
+            // Respect safe area at the top
+            top: insets.top,
+            // Leave space for controls at the bottom
+            bottom: controlsHeight,
+          },
+        ]}>
         <PowerShotSD1000Camera
           ref={cameraRef}
           device={device}
