@@ -1,9 +1,4 @@
-/**
- * DigiCamSim - Full Screen Camera App
- * Built with React Native Vision Camera
- */
-
-import React, {useEffect, useCallback} from 'react';
+import React, {useCallback} from 'react';
 import {
   StyleSheet,
   View,
@@ -17,14 +12,20 @@ import {
   useCameraDevice,
   useCameraPermission,
 } from 'react-native-vision-camera';
+import {observer} from 'mobx-react-lite';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from '@navigation/types';
 
-function App(): React.JSX.Element {
-  // Use the recommended hooks from the documentation
+type CameraScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Camera'>;
+
+const CameraScreen = observer(() => {
+  const navigation = useNavigation<CameraScreenNavigationProp>();
   const {hasPermission, requestPermission} = useCameraPermission();
   const device = useCameraDevice('back');
 
   // Request camera permissions on component mount
-  useEffect(() => {
+  React.useEffect(() => {
     if (!hasPermission) {
       requestPermission();
     }
@@ -34,6 +35,10 @@ function App(): React.JSX.Element {
   const onError = useCallback((error: Error) => {
     console.error('Camera error:', error);
   }, []);
+
+  const navigateToSettings = () => {
+    navigation.navigate('Settings');
+  };
 
   // Render loading view while waiting for camera
   if (device == null) {
@@ -83,9 +88,17 @@ function App(): React.JSX.Element {
           }}
         />
       </View>
+
+      {/* Settings button */}
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={navigateToSettings}
+      >
+        <Text style={styles.settingsButtonText}>⚙️</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -127,6 +140,20 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     borderColor: 'rgba(255, 255, 255, 0.5)',
   },
+  settingsButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsButtonText: {
+    fontSize: 24,
+  },
 });
 
-export default App;
+export default CameraScreen;
