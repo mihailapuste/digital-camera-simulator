@@ -1,13 +1,12 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   Image,
-  ScrollView,
   SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import {useCameraDevice, useCameraPermission} from 'react-native-vision-camera';
 import {useNavigation} from '@react-navigation/native';
@@ -16,7 +15,9 @@ import {observer} from 'mobx-react-lite';
 
 import {RootStackParamList} from '@navigation/types';
 import {useStores} from '@stores/index';
-import PowerShotSD1000Camera from '../components/PowerShotSD1000Camera';
+import PowerShotSD1000Camera, {
+  PowerShotSD1000CameraHandle,
+} from '../components/PowerShotSD1000Camera';
 
 type CameraScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -27,18 +28,16 @@ const CameraScreen: React.FC = () => {
   const navigation = useNavigation<CameraScreenNavigationProp>();
   const {hasPermission, requestPermission} = useCameraPermission();
   const device = useCameraDevice('back');
+  const cameraRef = useRef<PowerShotSD1000CameraHandle>(null);
 
   // Get the camera store from our root store
   const {cameraStore} = useStores();
 
-  // Request camera permissions on component mount
+  // Request camera permission on component mount
   useEffect(() => {
-    const checkPermission = async () => {
-      if (!hasPermission) {
-        await requestPermission();
-      }
-    };
-    checkPermission();
+    if (!hasPermission) {
+      requestPermission();
+    }
   }, [hasPermission, requestPermission]);
 
   // Function to navigate to settings screen
@@ -46,54 +45,39 @@ const CameraScreen: React.FC = () => {
     navigation.navigate('Settings');
   };
 
-  // Function to save the last taken photo to the gallery
-  const saveToGallery = async () => {
-    if (!cameraStore.lastImagePath) {
-      Alert.alert('Error', 'No photo to save');
-      return;
-    }
-
+  // Function to take a photo
+  const takePhoto = async () => {
     try {
-      const success = await cameraStore.saveToGallery(
-        cameraStore.lastImagePath,
-      );
-      if (success) {
-        Alert.alert('Success', 'Photo saved to gallery');
-      } else {
-        Alert.alert('Error', 'Failed to save photo to gallery');
+      if (cameraRef.current) {
+        await cameraRef.current.takePhoto();
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while saving the photo');
-      console.error('Error saving to gallery:', error);
+      console.error('Error taking photo:', error);
     }
   };
 
   // If no permission, show a message
   if (!hasPermission) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>
-            Camera permission is required to use this app
-          </Text>
-          <TouchableOpacity
-            style={styles.permissionButton}
-            onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>
+          We need your permission to use the camera
+        </Text>
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={requestPermission}>
+          <Text style={styles.permissionButtonText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
-  // If no device, show a message
+  // If no device found, show a message
   if (!device) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>No camera device found</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>No camera device found</Text>
+      </View>
     );
   }
 
@@ -101,63 +85,44 @@ const CameraScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* Main Camera Component with PowerShot Skin */}
       <View style={styles.cameraContainer}>
-        <PowerShotSD1000Camera device={device} isActive={true} />
+        <PowerShotSD1000Camera ref={cameraRef} device={device} isActive={true} />
       </View>
 
-      {/* Last image preview and save button */}
-      {cameraStore.lastImagePath ? (
-        <View style={styles.previewContainer}>
-          <Image
-            source={{uri: `file://${cameraStore.lastImagePath}`}}
-            style={styles.imagePreview}
-          />
-          <TouchableOpacity style={styles.saveButton} onPress={saveToGallery}>
-            <Text style={styles.saveButtonText}>Save to Gallery</Text>
-          </TouchableOpacity>
+      {/* Bottom Controls Area */}
+      <View style={styles.bottomControlsContainer}>
+        {/* Gallery Box (Left) */}
+        <View style={styles.galleryBox}>
+          {cameraStore.lastImagePath ? (
+            <Image
+              source={{uri: `file://${cameraStore.lastImagePath}`}}
+              style={styles.galleryBoxImage}
+            />
+          ) : (
+            <View style={styles.galleryBoxPlaceholder}>
+              <Text style={styles.placeholderText}>No Photos</Text>
+            </View>
+          )}
         </View>
-      ) : null}
 
-      {/* Settings button */}
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={navigateToSettings}>
-        <Text style={styles.settingsButtonText}>⚙️</Text>
-      </TouchableOpacity>
+        {/* Take Photo Button (Middle) */}
+        <TouchableOpacity style={styles.takePhotoButton} onPress={takePhoto}>
+          <View style={styles.takePhotoButtonInner} />
+        </TouchableOpacity>
 
-      {/* Gallery at the bottom */}
-      {cameraStore.images.length > 0 && (
-        <ScrollView horizontal style={styles.galleryContainer}>
-          {cameraStore.images.map((imagePath, index) => (
-            <TouchableOpacity
-              key={`${imagePath}-${index}`}
-              onPress={() =>
-                Alert.alert('Image Options', 'What would you like to do?', [
-                  {
-                    text: 'Delete',
-                    onPress: () => cameraStore.removeImage(imagePath),
-                    style: 'destructive',
-                  },
-                  {
-                    text: 'Save to Gallery',
-                    onPress: () => cameraStore.saveToGallery(imagePath),
-                  },
-                  {
-                    text: 'Cancel',
-                    style: 'cancel',
-                  },
-                ])
-              }>
-              <Image
-                source={{uri: `file://${imagePath}`}}
-                style={styles.galleryImage}
-              />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+        {/* Settings Button (Right) */}
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={navigateToSettings}>
+          <Text style={styles.settingsButtonText}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
+
+const {height} = Dimensions.get('window');
+const cameraHeight = height * 0.8; // Match the height in PowerShotSD1000Camera
+const bottomControlsHeight = height * 0.2; // Remaining 20% of screen height
 
 const styles = StyleSheet.create({
   container: {
@@ -165,7 +130,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
   },
   cameraContainer: {
-    flex: 1,
+    height: cameraHeight,
     position: 'relative',
   },
   permissionContainer: {
@@ -190,78 +155,70 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
   },
-  controlsContainer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 0,
-    right: 0,
+  bottomControlsContainer: {
+    height: bottomControlsHeight,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  // Gallery Box (Left)
+  galleryBox: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  galleryBoxImage: {
+    width: '100%',
+    height: '100%',
+  },
+  galleryBoxPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  captureButton: {
+  placeholderText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  // Take Photo Button (Middle)
+  takePhotoButton: {
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: 'white',
-    borderWidth: 5,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  previewContainer: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 10,
-    padding: 5,
-  },
-  imagePreview: {
-    width: 60,
-    height: 60,
-    borderRadius: 5,
-  },
-  saveButton: {
-    marginLeft: 10,
-    backgroundColor: '#2196F3',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 12,
-  },
-  settingsButton: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  takePhotoButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'white',
+  },
+  // Settings Button (Right)
+  settingsButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(33, 150, 243, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
   },
   settingsButtonText: {
     fontSize: 24,
-  },
-  galleryContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 0,
-    right: 0,
-    height: 80,
-    paddingHorizontal: 10,
-  },
-  galleryImage: {
-    width: 70,
-    height: 70,
-    marginHorizontal: 5,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: 'white',
   },
 });
 
