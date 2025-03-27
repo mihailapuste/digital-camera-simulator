@@ -24,16 +24,10 @@ const PowerShotSD1000Camera = forwardRef<
   const takePhoto = async () => {
     if (cameraRef.current) {
       try {
-        const camera = cameraRef.current;
-        await camera
-          .takePhoto({
-            flash: 'off',
-            // Lower quality settings are applied in post-processing
-          })
-          .then(photo => {
-            // Process the photo after taking it
-            cameraStore.addImage(photo.path);
-          });
+        // Create a properly typed reference to pass to the store
+        const camera = {current: cameraRef.current};
+        // Use the cameraStore's takePhoto method which handles saving the photo properly
+        await cameraStore.takePhoto(camera);
       } catch (e) {
         if (e instanceof CameraRuntimeError) {
           console.error(`Error taking photo: ${e.message}`);

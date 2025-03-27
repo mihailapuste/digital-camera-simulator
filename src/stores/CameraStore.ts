@@ -18,118 +18,229 @@ export const CameraStore = types
       return self.images.length;
     },
   }))
-  .actions(self => ({
-    // Add image path to the store
-    addImage(path: string) {
+  .actions(self => {
+    // Define action methods that will be used by other actions
+    const setCapturing = (isCapturing: boolean) => {
+      self.isCapturing = isCapturing;
+    };
+
+    const addImage = (path: string) => {
       self.images.push(path);
       self.lastImagePath = path;
-    },
+    };
 
-    // Set capturing status
-    setCapturing(isCapturing: boolean) {
-      self.isCapturing = isCapturing;
-    },
+    return {
+      // Add image path to the store
+      addImage,
 
-    // Clear all images
-    clearImages() {
-      self.images.clear();
-      self.lastImagePath = '';
-    },
+      // Set capturing status
+      setCapturing,
 
-    // Remove a specific image by path
-    removeImage(path: string) {
-      const index = self.images.findIndex(imagePath => imagePath === path);
-      if (index !== -1) {
-        self.images.splice(index, 1);
+      // Clear all images
+      clearImages() {
+        self.images.clear();
+        self.lastImagePath = '';
+      },
 
-        // Delete the file from the device
-        RNFS.unlink(path).catch(err => {
-          console.error('Error deleting image file:', err);
-        });
+      // Remove a specific image by path
+      removeImage(path: string) {
+        const index = self.images.findIndex(imagePath => imagePath === path);
+        if (index !== -1) {
+          self.images.splice(index, 1);
 
-        // Update lastImagePath if needed
-        if (self.lastImagePath === path) {
-          self.lastImagePath = self.images.length > 0 ? self.images[self.images.length - 1] : '';
+          // Delete the file from the device
+          RNFS.unlink(path).catch(err => {
+            console.error('Error deleting image file:', err);
+          });
+
+          // Update lastImagePath if needed
+          if (self.lastImagePath === path) {
+            self.lastImagePath =
+              self.images.length > 0 ? self.images[self.images.length - 1] : '';
+          }
         }
-      }
-    },
-  }))
-  .actions(self => ({
-    // Take a photo using the camera and save it to the device
-    takePhoto: flow(function* (camera: React.RefObject<Camera>) {
-      if (!camera.current || self.isCapturing) {
-        return null;
-      }
+      },
 
-      try {
-        self.setCapturing(true);
+      // Load all photos from the app's directory
+      loadPhotos: flow(function* () {
+        try {
+          // Determine the directory to read from based on platform
+          const directory =
+            Platform.OS === 'ios'
+              ? RNFS.DocumentDirectoryPath
+              : RNFS.ExternalDirectoryPath;
 
-        // Take the photo
-        const photo = yield camera.current.takePhoto({
-          flash: 'off',
-        });
+          console.log('Loading photos from directory:', directory);
 
-        // Get the path to save the photo
-        const timestamp = new Date().getTime();
-        const fileName = `DigiCamSim_${timestamp}.jpg`;
+          // Read the directory
+          const files = yield RNFS.readDir(directory);
+          console.log('Files found in directory:', files.length);
 
-        // Determine the directory to save to based on platform
-        const directory = Platform.OS === 'ios'
-          ? RNFS.DocumentDirectoryPath
-          : RNFS.ExternalDirectoryPath;
+          // Log all files for debugging
+          files.forEach((file: any) => {
+            console.log('File:', file.name, file.path);
+          });
 
-        const destPath = `${directory}/${fileName}`;
+          // Filter for image files (DigiCamSim_*.jpg)
+          const imageFiles = files
+            .filter(
+              (file: any) =>
+                file.name.startsWith('DigiCamSim_') &&
+                file.name.endsWith('.jpg'),
+            )
+            .sort((a: any, b: any) => b.mtime.getTime() - a.mtime.getTime()); // Sort by modification time, newest first
 
-        // Move the photo from the cache to our app's directory
-        yield RNFS.moveFile(photo.path, destPath);
+          console.log('Filtered image files:', imageFiles.length);
 
-        // Add the image to our store
-        self.addImage(destPath);
+          // Clear existing images
+          self.images.clear();
 
-        return destPath;
-      } catch (error) {
-        console.error('Error taking photo:', error);
-        return null;
-      } finally {
-        self.setCapturing(false);
-      }
-    }),
+          // Add all image paths to the store
+          imageFiles.forEach((file: any) => {
+            console.log('Adding image to store:', file.path);
+            self.images.push(file.path);
+          });
 
-    // Save an image to the device's gallery/photos app
-    saveToGallery: flow(function* (imagePath: string) {
-      if (!imagePath) {
-        return false;
-      }
+          // Set the last image path
+          if (imageFiles.length > 0) {
+            self.lastImagePath = imageFiles[0].path;
+            console.log('Set last image path:', self.lastImagePath);
+          } else {
+            console.log('No images found');
+          }
 
-      try {
-        // For Android, we need to use the CameraRoll module or MediaStore API
-        // For iOS, we can use RNFS.copyFile to the Photos directory
-        if (Platform.OS === 'ios') {
-          // For iOS, we need to use the CameraRoll API or Photos framework
-          // This is a simplified version
-          const timestamp = new Date().getTime();
-          const fileName = `DigiCamSim_${timestamp}.jpg`;
-          const photoDir = RNFS.PicturesDirectoryPath;
-          const destPath = `${photoDir}/${fileName}`;
-
-          yield RNFS.copyFile(imagePath, destPath);
-          return true;
-        } else {
-          // For Android, we would use the MediaStore API
-          // This is a simplified version
-          const timestamp = new Date().getTime();
-          const fileName = `DigiCamSim_${timestamp}.jpg`;
-          const photoDir = RNFS.PicturesDirectoryPath;
-          const destPath = `${photoDir}/${fileName}`;
-
-          yield RNFS.copyFile(imagePath, destPath);
-          return true;
+          return self.images;
+        } catch (error) {
+          console.error('Error loading photos:', error);
+          return [];
         }
-      } catch (error) {
-        console.error('Error saving to gallery:', error);
-        return false;
-      }
-    }),
-  }));
+      }),
+
+      // Load only the latest photo
+      loadLatestPhoto: flow(function* () {
+        try {
+          // Determine the directory to read from based on platform
+          const directory =
+            Platform.OS === 'ios'
+              ? RNFS.DocumentDirectoryPath
+              : RNFS.ExternalDirectoryPath;
+
+          console.log('Loading latest photo from directory:', directory);
+
+          // Read the directory
+          const files = yield RNFS.readDir(directory);
+
+          // Filter for image files (DigiCamSim_*.jpg)
+          const imageFiles = files
+            .filter(
+              (file: any) =>
+                file.name.startsWith('DigiCamSim_') &&
+                file.name.endsWith('.jpg'),
+            )
+            .sort((a: any, b: any) => b.mtime.getTime() - a.mtime.getTime()); // Sort by modification time, newest first
+
+          // Set the last image path if any images found
+          if (imageFiles.length > 0) {
+            self.lastImagePath = imageFiles[0].path;
+            console.log('Set last image path:', self.lastImagePath);
+            return self.lastImagePath;
+          } else {
+            console.log('No images found');
+            return null;
+          }
+        } catch (error) {
+          console.error('Error loading latest photo:', error);
+          return null;
+        }
+      }),
+
+      // Take a photo using the camera and save it to the device
+      takePhoto: flow(function* (camera: React.RefObject<Camera>) {
+        if (!camera.current || self.isCapturing) {
+          console.log('Camera is not available or is currently capturing');
+          return null;
+        }
+
+        try {
+          setCapturing(true);
+
+          // Take the photo
+          const photo = yield camera.current.takePhoto({
+            flash: 'off',
+          });
+
+          console.log('Photo taken:', photo);
+
+          // Get the path to save the photo
+          const timestamp = new Date().getTime();
+          const photoFileName = `DigiCamSim_${timestamp}.jpg`;
+
+          // Determine the directory to save to based on platform
+          const directory =
+            Platform.OS === 'ios'
+              ? RNFS.DocumentDirectoryPath
+              : RNFS.ExternalDirectoryPath;
+
+          const destPath = `${directory}/${photoFileName}`;
+
+          console.log('Saving photo to:', destPath);
+
+          // Move the photo from the cache to our app's directory
+          yield RNFS.moveFile(photo.path, destPath);
+
+          console.log('Photo saved to:', destPath);
+
+          // Add the image to our store
+          addImage(destPath);
+
+          console.log('Image added to store:', destPath);
+
+          return destPath;
+        } catch (error) {
+          console.error('Error taking photo:', error);
+          return null;
+        } finally {
+          setCapturing(false);
+        }
+      }),
+
+      // Save an image to the device's gallery/photos app
+      saveToGallery: flow(function* (imagePath: string) {
+        if (!imagePath) {
+          console.log('No image path provided');
+          return false;
+        }
+
+        try {
+          // Determine how to save based on platform
+          if (Platform.OS === 'ios') {
+            // For iOS, we copy to the DCIM directory
+            const timestamp = new Date().getTime();
+            const galleryFileName = `DigiCamSim_${timestamp}.jpg`;
+            const photoDir = RNFS.PicturesDirectoryPath;
+            const destPath = `${photoDir}/${galleryFileName}`;
+
+            yield RNFS.copyFile(imagePath, destPath);
+            console.log('Image saved to gallery:', destPath);
+            return true;
+          } else {
+            // For Android, we would use the MediaStore API
+            // This is a simplified version
+            const timestamp = new Date().getTime();
+            const galleryFileName = `DigiCamSim_${timestamp}.jpg`;
+            const photoDir = RNFS.PicturesDirectoryPath;
+            const destPath = `${photoDir}/${galleryFileName}`;
+
+            yield RNFS.copyFile(imagePath, destPath);
+            console.log('Image saved to gallery:', destPath);
+            return true;
+          }
+        } catch (error) {
+          console.error('Error saving to gallery:', error);
+          return false;
+        }
+      }),
+    };
+  });
 
 export interface ICameraStore extends Instance<typeof CameraStore> {}

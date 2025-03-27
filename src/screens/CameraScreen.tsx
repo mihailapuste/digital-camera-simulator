@@ -44,6 +44,19 @@ const CameraScreen: React.FC = () => {
     }
   }, [hasPermission, requestPermission]);
 
+  // Load the latest photo when the app starts
+  useEffect(() => {
+    const loadLatestPhoto = async () => {
+      try {
+        await cameraStore.loadLatestPhoto();
+      } catch (error) {
+        console.error('Error loading latest photo:', error);
+      }
+    };
+
+    loadLatestPhoto();
+  }, [cameraStore]);
+
   // Function to navigate to settings screen
   const navigateToSettings = () => {
     navigation.navigate('Settings');

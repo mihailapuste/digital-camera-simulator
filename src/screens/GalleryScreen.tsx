@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -8,9 +8,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Text,
+  ActivityIndicator,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useStores} from '@stores/index';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
@@ -20,13 +21,38 @@ type GalleryScreenNavigationProp = StackNavigationProp<
   'Gallery'
 >;
 
-const GalleryScreen = () => {
+const GalleryScreen = observer(() => {
   const navigation = useNavigation<GalleryScreenNavigationProp>();
   const {cameraStore} = useStores();
   const {width} = Dimensions.get('window');
+  const [loading, setLoading] = useState(true);
 
   // Calculate the width of each image in the grid (3 columns with small gaps)
   const imageSize = (width - 8) / 3;
+
+  // Function to load photos
+  const loadPhotos = useCallback(async () => {
+    setLoading(true);
+    try {
+      await cameraStore.loadPhotos();
+    } catch (error) {
+      console.error('Error loading photos:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [cameraStore]);
+
+  // Load photos when component mounts
+  useEffect(() => {
+    loadPhotos();
+  }, [loadPhotos]);
+
+  // Refresh photos when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadPhotos();
+    }, [loadPhotos])
+  );
 
   const renderItem = ({item}: {item: string}) => (
     <TouchableOpacity
@@ -52,7 +78,12 @@ const GalleryScreen = () => {
         <View style={styles.placeholder} />
       </View>
 
-      {cameraStore.images.length > 0 ? (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Loading photos...</Text>
+        </View>
+      ) : cameraStore.images.length > 0 ? (
         <FlatList
           data={cameraStore.images}
           renderItem={renderItem}
@@ -72,7 +103,7 @@ const GalleryScreen = () => {
       )}
     </SafeAreaView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -130,6 +161,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
+    marginTop: 10,
+  },
 });
 
-export default observer(GalleryScreen);
+export default GalleryScreen;
