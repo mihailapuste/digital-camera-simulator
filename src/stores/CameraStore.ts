@@ -1,8 +1,10 @@
 import {types, flow, Instance, getRoot} from 'mobx-state-tree';
-import {Platform} from 'react-native';
+import {Platform, Alert} from 'react-native';
 import {Camera} from 'react-native-vision-camera';
 import RNFS from 'react-native-fs';
 import {IRootStore} from './RootStore';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
+import {hasAndroidCameraRollPermission} from '../utils/permissionsUtils';
 
 /**
  * Store to handle camera operations and image storage
@@ -211,40 +213,40 @@ export const CameraStore = types
         }
       }),
 
-      // Save an image to the device's gallery/photos app
+      // Save an image to the device gallery
       saveToGallery: flow(function* (imagePath: string) {
-        if (!imagePath) {
-          console.log('No image path provided');
-          return false;
-        }
-
         try {
-          // Determine how to save based on platform
-          if (Platform.OS === 'ios') {
-            // For iOS, we copy to the DCIM directory
-            const timestamp = new Date().getTime();
-            const galleryFileName = `DigiCamSim_${timestamp}.jpg`;
-            const photoDir = RNFS.PicturesDirectoryPath;
-            const destPath = `${photoDir}/${galleryFileName}`;
+          console.log('Saving image to gallery:', imagePath);
 
-            yield RNFS.copyFile(imagePath, destPath);
-            console.log('Image saved to gallery:', destPath);
-            return true;
-          } else {
-            // For Android, we would use the MediaStore API
-            // This is a simplified version
-            const timestamp = new Date().getTime();
-            const galleryFileName = `DigiCamSim_${timestamp}.jpg`;
-            const photoDir = RNFS.PicturesDirectoryPath;
-            const destPath = `${photoDir}/${galleryFileName}`;
-
-            yield RNFS.copyFile(imagePath, destPath);
-            console.log('Image saved to gallery:', destPath);
-            return true;
+          // Check for Android permissions
+          if (Platform.OS === 'android') {
+            const hasPermission = yield hasAndroidCameraRollPermission();
+            if (!hasPermission) {
+              Alert.alert(
+                'Permission Required',
+                'Camera roll permission is needed to save photos to your gallery.',
+                [{text: 'OK'}]
+              );
+              return null;
+            }
           }
+
+          // Make sure the path starts with file:// for CameraRoll
+          const formattedPath = imagePath.startsWith('file://')
+            ? imagePath
+            : `file://${imagePath}`;
+
+          // Save to camera roll
+          const result = yield CameraRoll.save(formattedPath, {
+            type: 'photo',
+            album: 'DigiCamSim',
+          });
+
+          console.log('Image saved to gallery:', result);
+          return result;
         } catch (error) {
           console.error('Error saving to gallery:', error);
-          return false;
+          throw error;
         }
       }),
     };
