@@ -1,7 +1,8 @@
-import {types, flow, Instance} from 'mobx-state-tree';
+import {types, flow, Instance, getRoot} from 'mobx-state-tree';
 import {Platform} from 'react-native';
 import {Camera} from 'react-native-vision-camera';
 import RNFS from 'react-native-fs';
+import {IRootStore} from './RootStore';
 
 /**
  * Store to handle camera operations and image storage
@@ -28,6 +29,8 @@ export const CameraStore = types
       self.images.push(path);
       self.lastImagePath = path;
     };
+
+    const rootStore = getRoot(self);
 
     return {
       // Add image path to the store
@@ -164,9 +167,13 @@ export const CameraStore = types
         try {
           setCapturing(true);
 
+          // Get the flash mode from the environment
+          const flashMode = (rootStore as IRootStore).settingsStore
+            .flashMode as 'on' | 'off' | 'auto' | undefined;
+
           // Take the photo
           const photo = yield camera.current.takePhoto({
-            flash: 'off',
+            flash: flashMode,
           });
 
           console.log('Photo taken:', photo);
