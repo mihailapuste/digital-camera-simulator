@@ -63,11 +63,11 @@ const GalleryScreen: React.FC = () => {
     };
   }, [insets.top]);
 
-  const listContainerStyle = useCallback(() => {
-    return {
-      paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
-    };
-  }, [insets.bottom]);
+  // Create a dedicated style for FlashList contentContainerStyle
+  const flashListContentStyle = {
+    padding: 2,
+    paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
+  };
 
   const renderItem = ({item, index}: {item: string; index: number}) => (
     <TouchableOpacity
@@ -107,10 +107,7 @@ const GalleryScreen: React.FC = () => {
             keyExtractor={item => item}
             numColumns={3}
             estimatedItemSize={imageSize}
-            contentContainerStyle={[
-              styles.gridContainer,
-              listContainerStyle(),
-            ]}
+            contentContainerStyle={flashListContentStyle}
           />
         </View>
       ) : (
@@ -154,7 +151,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   gridContainer: {
-    padding: 2,
+    backgroundColor: '#000',
   },
   imageContainer: {
     margin: 1,
