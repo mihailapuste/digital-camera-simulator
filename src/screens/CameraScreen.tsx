@@ -49,6 +49,10 @@ const CameraScreen: React.FC = () => {
     navigation.navigate('Settings');
   };
 
+  const navigateToGallery = () => {
+    navigation.navigate('Gallery');
+  };
+
   // Function to take a photo
   const takePhoto = async () => {
     try {
@@ -57,13 +61,6 @@ const CameraScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-    }
-  };
-
-  // Function to open the photo modal
-  const openPhotoModal = () => {
-    if (cameraStore.lastImagePath) {
-      setShowPhotoModal(true);
     }
   };
 
@@ -120,7 +117,7 @@ const CameraScreen: React.FC = () => {
       {/* Camera Controls Component */}
       <CameraControls
         onTakePhoto={takePhoto}
-        onOpenGallery={openPhotoModal}
+        onOpenGallery={navigateToGallery}
         onOpenSettings={navigateToSettings}
       />
 
