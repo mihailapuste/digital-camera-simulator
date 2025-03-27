@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -20,6 +20,7 @@ import {
 } from 'react-native-gesture-handler';
 import FastImage from 'react-native-fast-image';
 import {FlashList} from '@shopify/flash-list';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 type ImageViewerScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -35,8 +36,8 @@ const ImageViewerScreen: React.FC = () => {
   const route = useRoute<ImageViewerScreenRouteProp>();
   const {cameraStore} = useStores();
   const flatListRef = useRef<FlashList<string>>(null);
-  const doubleTapRef = useRef(null);
   const [headerVisible, setHeaderVisible] = useState(true);
+  const insets = useSafeAreaInsets();
 
   // Get the initial index from the route params
   const initialIndex = route.params.initialIndex;
@@ -73,7 +74,7 @@ const ImageViewerScreen: React.FC = () => {
   // Render each image in full screen
   const renderItem = ({item}: {item: string}) => (
     <View style={styles.imageContainer}>
-      <TapGestureHandler onHandlerStateChange={onSingleTap}>
+      <TapGestureHandler onHandlerStateChange={onSingleTap} numberOfTaps={1}>
         <View style={styles.imageWrapper}>
           <FastImage
             source={{uri: `file://${item}`}}
@@ -85,14 +86,20 @@ const ImageViewerScreen: React.FC = () => {
     </View>
   );
 
+  // Create a style with the insets for the header
+  const headerStyle = useCallback(() => {
+    return {
+      paddingTop: insets.top > 0 ? insets.top : 12,
+    };
+  }, [insets.top]);
+
   return (
     <GestureHandlerRootView style={styles.container}>
+      <StatusBar hidden />
       <SafeAreaView style={styles.container}>
-        <StatusBar hidden />
-
         {/* Header with back button and counter */}
         {headerVisible && (
-          <View style={styles.header}>
+          <View style={[styles.header, headerStyle()]}>
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}>
@@ -125,6 +132,9 @@ const ImageViewerScreen: React.FC = () => {
           })}
           onViewableItemsChanged={handleViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom,
+          }}
         />
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -173,11 +183,13 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     width: width,
-    height: height - 100,
+    height: height,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: width,
+    height: height - 100,
   },
 });
 

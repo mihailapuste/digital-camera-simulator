@@ -15,6 +15,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
 import FastImage from 'react-native-fast-image';
 import {FlashList} from '@shopify/flash-list';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 type GalleryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -26,6 +27,8 @@ const GalleryScreen: React.FC = () => {
   const {cameraStore} = useStores();
   const [loading, setLoading] = useState(true);
   const {width} = Dimensions.get('window');
+  const insets = useSafeAreaInsets();
+
   // Calculate the width of each image in the grid (3 columns with small gaps)
   const imageSize = (width - 8) / 3;
 
@@ -53,6 +56,19 @@ const GalleryScreen: React.FC = () => {
     }, [loadPhotos]),
   );
 
+  // Create dynamic styles based on insets
+  const headerStyle = useCallback(() => {
+    return {
+      paddingTop: insets.top > 0 ? insets.top : 12,
+    };
+  }, [insets.top]);
+
+  const listContainerStyle = useCallback(() => {
+    return {
+      paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
+    };
+  }, [insets.bottom]);
+
   const renderItem = ({item, index}: {item: string; index: number}) => (
     <TouchableOpacity
       style={styles.imageContainer}
@@ -70,7 +86,7 @@ const GalleryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, headerStyle()]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
@@ -91,7 +107,10 @@ const GalleryScreen: React.FC = () => {
             keyExtractor={item => item}
             numColumns={3}
             estimatedItemSize={imageSize}
-            contentContainerStyle={styles.gridContainer}
+            contentContainerStyle={[
+              styles.gridContainer,
+              listContainerStyle(),
+            ]}
           />
         </View>
       ) : (
