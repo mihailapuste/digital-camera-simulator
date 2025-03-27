@@ -7,6 +7,7 @@ import {
   Text,
   StatusBar,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
@@ -71,6 +72,55 @@ const ImageViewerScreen: React.FC = () => {
     }
   };
 
+  // Handle deleting the current image
+  const handleDeleteImage = () => {
+    Alert.alert(
+      'Delete Photo',
+      'Are you sure you want to delete this photo?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            const imageToDelete = cameraStore.images[currentIndex];
+            
+            // If there's only one image left, go back to gallery after deletion
+            if (cameraStore.images.length <= 1) {
+              cameraStore.removeImage(imageToDelete);
+              navigation.goBack();
+              return;
+            }
+            
+            // If deleting the last image, move to the previous one
+            const newIndex = currentIndex === cameraStore.images.length - 1
+              ? currentIndex - 1
+              : currentIndex;
+            
+            cameraStore.removeImage(imageToDelete);
+            
+            // Update current index if needed
+            if (currentIndex !== newIndex) {
+              setCurrentIndex(newIndex);
+              
+              // Scroll to the new index
+              if (flatListRef.current) {
+                flatListRef.current.scrollToIndex({
+                  index: newIndex,
+                  animated: true,
+                });
+              }
+            }
+          },
+        },
+      ],
+      {cancelable: true},
+    );
+  };
+
   // Render each image in full screen
   const renderItem = ({item}: {item: string}) => (
     <View style={styles.imageContainer}>
@@ -110,7 +160,11 @@ const ImageViewerScreen: React.FC = () => {
               {currentIndex + 1} / {cameraStore.images.length}
             </Text>
 
-            <View style={styles.placeholder} />
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDeleteImage}>
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -125,11 +179,6 @@ const ImageViewerScreen: React.FC = () => {
           showsHorizontalScrollIndicator={false}
           initialScrollIndex={initialIndex}
           estimatedItemSize={width}
-          getItemLayout={(_, index) => ({
-            length: width,
-            offset: width * index,
-            index,
-          })}
           onViewableItemsChanged={handleViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
           contentContainerStyle={{
@@ -172,8 +221,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  placeholder: {
-    width: 50,
+  deleteButton: {
+    padding: 8,
+  },
+  deleteButtonText: {
+    color: '#ff4d4d',
+    fontSize: 16,
+    fontWeight: '500',
   },
   imageContainer: {
     width,

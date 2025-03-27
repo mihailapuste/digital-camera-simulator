@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Text,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -68,6 +69,29 @@ const GalleryScreen: React.FC = () => {
       onPress={() => {
         // Navigate to the ImageViewer with the selected image index
         navigation.navigate('ImageViewer', {initialIndex: index});
+      }}
+      onLongPress={() => {
+        // Show delete confirmation
+        Alert.alert(
+          'Delete Photo',
+          'Are you sure you want to delete this photo?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: () => {
+                cameraStore.removeImage(item);
+                // Reload photos after deletion
+                loadPhotos();
+              },
+            },
+          ],
+          {cancelable: true},
+        );
       }}>
       <FastImage
         source={{uri: `file://${item}`}}
