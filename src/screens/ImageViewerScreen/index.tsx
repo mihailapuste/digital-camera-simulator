@@ -7,7 +7,6 @@ import {
   Text,
   StatusBar,
   SafeAreaView,
-  Alert,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
@@ -16,7 +15,7 @@ import {RootStackParamList} from '@navigation/types';
 import {useStores} from '@stores/index';
 import {FlashList} from '@shopify/flash-list';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {GestureHandlerRootView, State} from 'react-native-gesture-handler';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import ImageView from './components/ImageView';
 
 const {width} = Dimensions.get('window');
@@ -33,7 +32,6 @@ const ImageViewerScreen: React.FC = () => {
   const route = useRoute<ImageViewerScreenRouteProp>();
   const {cameraStore} = useStores();
   const flatListRef = useRef<FlashList<string>>(null);
-  const [headerVisible, setHeaderVisible] = useState(true);
   const insets = useSafeAreaInsets();
 
   // Get the initial index from the route params
@@ -61,56 +59,6 @@ const ImageViewerScreen: React.FC = () => {
     itemVisiblePercentThreshold: 50,
   };
 
-  // Handle deleting the current image
-  const handleDeleteImage = () => {
-    Alert.alert(
-      'Delete Photo',
-      'Are you sure you want to delete this photo?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            const imageToDelete = cameraStore.images[currentIndex];
-
-            // If there's only one image left, go back to gallery after deletion
-            if (cameraStore.images.length <= 1) {
-              cameraStore.removeImage(imageToDelete);
-              navigation.goBack();
-              return;
-            }
-
-            // If deleting the last image, move to the previous one
-            const newIndex =
-              currentIndex === cameraStore.images.length - 1
-                ? currentIndex - 1
-                : currentIndex;
-
-            cameraStore.removeImage(imageToDelete);
-
-            // Update current index if needed
-            if (currentIndex !== newIndex) {
-              setCurrentIndex(newIndex);
-
-              // Scroll to the new index
-              if (flatListRef.current) {
-                flatListRef.current.scrollToIndex({
-                  index: newIndex,
-                  animated: true,
-                });
-              }
-            }
-          },
-        },
-      ],
-      {cancelable: true},
-    );
-  };
-
   // Render each image in full screen
   const renderItem = ({item}: {item: string}) => (
     <ImageView uri={`file://${item}`} />
@@ -132,12 +80,6 @@ const ImageViewerScreen: React.FC = () => {
           <Text style={styles.counter}>
             {currentIndex + 1} / {cameraStore.images.length}
           </Text>
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeleteImage}>
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Full screen image gallery with horizontal swiping */}
