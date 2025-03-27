@@ -2,8 +2,6 @@ import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   StyleSheet,
-  FlatList,
-  Image,
   Dimensions,
   TouchableOpacity,
   SafeAreaView,
@@ -15,6 +13,8 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useStores} from '@stores/index';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
+import FastImage from 'react-native-fast-image';
+import {FlashList} from '@shopify/flash-list';
 
 type GalleryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -24,9 +24,8 @@ type GalleryScreenNavigationProp = StackNavigationProp<
 const GalleryScreen = observer(() => {
   const navigation = useNavigation<GalleryScreenNavigationProp>();
   const {cameraStore} = useStores();
-  const {width} = Dimensions.get('window');
   const [loading, setLoading] = useState(true);
-
+  const {width} = Dimensions.get('window');
   // Calculate the width of each image in the grid (3 columns with small gaps)
   const imageSize = (width - 8) / 3;
 
@@ -54,16 +53,17 @@ const GalleryScreen = observer(() => {
     }, [loadPhotos])
   );
 
-  const renderItem = ({item}: {item: string}) => (
+  const renderItem = ({item, index}: {item: string; index: number}) => (
     <TouchableOpacity
       style={styles.imageContainer}
       onPress={() => {
-        // Navigate to a detail view if needed
-        // navigation.navigate('ImageDetail', {imagePath: item});
+        // Navigate to the ImageViewer with the selected image index
+        navigation.navigate('ImageViewer', {initialIndex: index});
       }}>
-      <Image
+      <FastImage
         source={{uri: `file://${item}`}}
         style={[styles.image, {width: imageSize, height: imageSize}]}
+        resizeMode={FastImage.resizeMode.cover}
       />
     </TouchableOpacity>
   );
@@ -84,13 +84,16 @@ const GalleryScreen = observer(() => {
           <Text style={styles.loadingText}>Loading photos...</Text>
         </View>
       ) : cameraStore.images.length > 0 ? (
-        <FlatList
-          data={cameraStore.images}
-          renderItem={renderItem}
-          keyExtractor={(item) => item}
-          numColumns={3}
-          contentContainerStyle={styles.gridContainer}
-        />
+        <View style={styles.flashListContainer}>
+          <FlashList
+            data={cameraStore.images}
+            renderItem={renderItem}
+            keyExtractor={(item) => item}
+            numColumns={3}
+            estimatedItemSize={imageSize}
+            contentContainerStyle={styles.gridContainer}
+          />
+        </View>
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No photos yet</Text>
@@ -120,13 +123,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   backButton: {
-    color: '#fff',
     fontSize: 16,
+    color: '#fff',
   },
   title: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#fff',
   },
   placeholder: {
     width: 40,
@@ -139,6 +142,17 @@ const styles = StyleSheet.create({
   },
   image: {
     borderRadius: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
+    marginTop: 10,
   },
   emptyContainer: {
     flex: 1,
@@ -161,16 +175,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
-  loadingContainer: {
+  flashListContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    color: '#fff',
-    fontSize: 18,
-    marginTop: 10,
+    width: '100%',
   },
 });
 
