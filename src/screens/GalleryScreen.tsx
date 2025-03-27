@@ -56,13 +56,6 @@ const GalleryScreen: React.FC = () => {
     }, [loadPhotos]),
   );
 
-  // Create dynamic styles based on insets
-  const headerStyle = useCallback(() => {
-    return {
-      paddingTop: insets.top > 0 ? insets.top : 12,
-    };
-  }, [insets.top]);
-
   // Create a dedicated style for FlashList contentContainerStyle
   const flashListContentStyle = {
     padding: 2,
@@ -86,7 +79,7 @@ const GalleryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={[styles.header, headerStyle()]}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
