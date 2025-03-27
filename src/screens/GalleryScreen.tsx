@@ -21,7 +21,7 @@ type GalleryScreenNavigationProp = StackNavigationProp<
   'Gallery'
 >;
 
-const GalleryScreen = observer(() => {
+const GalleryScreen: React.FC = () => {
   const navigation = useNavigation<GalleryScreenNavigationProp>();
   const {cameraStore} = useStores();
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ const GalleryScreen = observer(() => {
   useFocusEffect(
     useCallback(() => {
       loadPhotos();
-    }, [loadPhotos])
+    }, [loadPhotos]),
   );
 
   const renderItem = ({item, index}: {item: string; index: number}) => (
@@ -88,7 +88,7 @@ const GalleryScreen = observer(() => {
           <FlashList
             data={cameraStore.images}
             renderItem={renderItem}
-            keyExtractor={(item) => item}
+            keyExtractor={item => item}
             numColumns={3}
             estimatedItemSize={imageSize}
             contentContainerStyle={styles.gridContainer}
@@ -106,7 +106,7 @@ const GalleryScreen = observer(() => {
       )}
     </SafeAreaView>
   );
-});
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -181,4 +181,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GalleryScreen;
+export default observer(GalleryScreen);

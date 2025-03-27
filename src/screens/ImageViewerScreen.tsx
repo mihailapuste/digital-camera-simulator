@@ -30,7 +30,7 @@ type ImageViewerScreenRouteProp = RouteProp<RootStackParamList, 'ImageViewer'>;
 
 const {width, height} = Dimensions.get('window');
 
-const ImageViewerScreen = observer(() => {
+const ImageViewerScreen: React.FC = () => {
   const navigation = useNavigation<ImageViewerScreenNavigationProp>();
   const route = useRoute<ImageViewerScreenRouteProp>();
   const {cameraStore} = useStores();
@@ -64,7 +64,7 @@ const ImageViewerScreen = observer(() => {
   };
 
   // Single tap handler to toggle header visibility
-  const onSingleTap = (event) => {
+  const onSingleTap = event => {
     if (event.nativeEvent.state === State.ACTIVE) {
       setHeaderVisible(!headerVisible);
     }
@@ -112,7 +112,7 @@ const ImageViewerScreen = observer(() => {
           ref={flatListRef}
           data={cameraStore.images}
           renderItem={renderItem}
-          keyExtractor={(item) => item}
+          keyExtractor={item => item}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -129,7 +129,7 @@ const ImageViewerScreen = observer(() => {
       </SafeAreaView>
     </GestureHandlerRootView>
   );
-});
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -181,4 +181,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ImageViewerScreen;
+export default observer(ImageViewerScreen);
