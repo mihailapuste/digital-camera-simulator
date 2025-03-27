@@ -4,7 +4,6 @@ import {
   Canvas,
   Image,
   useImage,
-  ColorMatrix,
   Rect,
   FractalNoise,
   Skia,
@@ -60,8 +59,8 @@ interface ImageViewProps {
 const OldDigitalCameraImage = ({uri}: {uri: string}) => {
   const image = useImage(uri);
   // Set a fixed pixel size for the pixelation effect
-  const pixelSize = 0.005; // Fine pixelation level
-  const sharpenAmount = 0.2; // Increased sharpening intensity
+  const pixelSize = 0.004; // Fine pixelation level
+  const sharpenAmount = 0.5; // Increased sharpening intensity
 
   if (!image) {
     return <View style={[styles.image, styles.imagePlaceholder]} />;
@@ -110,35 +109,10 @@ const OldDigitalCameraImage = ({uri}: {uri: string}) => {
         height={height * 0.8}
         opacity={0.7}>
         {/* Apply high saturation with reduced exposure for old digital camera look */}
-        {/* <ColorMatrix
-          matrix={[
-            // High saturation with reduced exposure
-            1.5,
-            0.2,
-            0.2,
-            0,
-            -0.15, // Red channel with more reduced exposure
-            0.2,
-            1.4,
-            0.2,
-            0,
-            -0.15, // Green channel with more reduced exposure
-            0.2,
-            0.2,
-            1.7,
-            0,
-            -0.15, // Blue channel with more reduced exposure
-            0,
-            0,
-            0,
-            1,
-            0, // Alpha unchanged
-          ]}
-        /> */}
       </Image>
       {/* Add noise overlay */}
       <Rect x={0} y={0} width={width} height={height * 0.8} opacity={0.12}>
-        <FractalNoise freqX={0.03} freqY={0.03} octaves={2} />
+        <FractalNoise freqX={0.03} freqY={0.03} octaves={10} />
       </Rect>
     </Canvas>
   );

@@ -61,12 +61,15 @@ const PowerShotSD1000Camera = forwardRef<
           <View style={StyleSheet.absoluteFill}>
             <Camera
               ref={cameraRef}
+              format={device.formats[0]}
               style={styles.camera}
               device={device}
               isActive={isActive}
               photo={true}
               enableZoomGesture={false}
               videoStabilizationMode="off"
+              photoHdr={true}
+              fps={40}
             />
           </View>
         )}
