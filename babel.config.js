@@ -1,6 +1,15 @@
 module.exports = {
   presets: ['module:@react-native/babel-preset'],
   plugins: [
+    'react-native-worklets-core/plugin',
+    '@babel/plugin-proposal-nullish-coalescing-operator',
+    '@babel/plugin-proposal-optional-chaining',
+    [
+      'react-native-reanimated/plugin',
+      {
+        processNestedWorklets: true,
+      },
+    ],
     [
       'module-resolver',
       {

@@ -28,8 +28,10 @@ const PowerShotSD1000Camera = forwardRef<
         await camera
           .takePhoto({
             flash: 'off',
+            // Lower quality settings are applied in post-processing
           })
           .then(photo => {
+            // Process the photo after taking it
             cameraStore.addImage(photo.path);
           });
       } catch (e) {
@@ -62,13 +64,17 @@ const PowerShotSD1000Camera = forwardRef<
           {width: cameraWidth, height: cameraHeight},
         ]}>
         {device && (
-          <Camera
-            ref={cameraRef}
-            style={styles.camera}
-            device={device}
-            isActive={isActive}
-            photo={true}
-          />
+          <View style={StyleSheet.absoluteFill}>
+            <Camera
+              ref={cameraRef}
+              style={styles.camera}
+              device={device}
+              isActive={isActive}
+              photo={true}
+              enableZoomGesture={false}
+              videoStabilizationMode="off"
+            />
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -94,7 +100,6 @@ const styles = StyleSheet.create({
   skinContainer: {
     position: 'absolute',
     width: '100%',
-
     height: '100%',
     top: 0,
   },
