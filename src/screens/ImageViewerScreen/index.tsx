@@ -14,14 +14,45 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
 import {useStores} from '@stores/index';
-import {
-  GestureHandlerRootView,
-  TapGestureHandler,
-  State,
-} from 'react-native-gesture-handler';
-import FastImage from 'react-native-fast-image';
 import {FlashList} from '@shopify/flash-list';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {
+  State,
+  TapGestureHandler,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import {Canvas, Image, ColorMatrix, useImage} from '@shopify/react-native-skia';
+
+const {width, height} = Dimensions.get('window');
+
+// Black and white image component using Skia
+const BlackAndWhiteImage = ({uri}: {uri: string}) => {
+  const image = useImage(uri);
+
+  if (!image) {
+    return <View style={[styles.image, styles.imagePlaceholder]} />;
+  }
+
+  return (
+    <Canvas style={styles.image}>
+      <Image
+        image={image}
+        fit="contain"
+        x={0}
+        y={0}
+        width={width}
+        height={height - 100}>
+        <ColorMatrix
+          matrix={[
+            // Black and white matrix
+            0.33, 0.33, 0.33, 0, 0, 0.33, 0.33, 0.33, 0, 0, 0.33, 0.33, 0.33, 0,
+            0, 0, 0, 0, 1, 0,
+          ]}
+        />
+      </Image>
+    </Canvas>
+  );
+};
 
 type ImageViewerScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -29,8 +60,6 @@ type ImageViewerScreenNavigationProp = StackNavigationProp<
 >;
 
 type ImageViewerScreenRouteProp = RouteProp<RootStackParamList, 'ImageViewer'>;
-
-const {width, height} = Dimensions.get('window');
 
 const ImageViewerScreen: React.FC = () => {
   const navigation = useNavigation<ImageViewerScreenNavigationProp>();
@@ -87,25 +116,26 @@ const ImageViewerScreen: React.FC = () => {
           style: 'destructive',
           onPress: () => {
             const imageToDelete = cameraStore.images[currentIndex];
-            
+
             // If there's only one image left, go back to gallery after deletion
             if (cameraStore.images.length <= 1) {
               cameraStore.removeImage(imageToDelete);
               navigation.goBack();
               return;
             }
-            
+
             // If deleting the last image, move to the previous one
-            const newIndex = currentIndex === cameraStore.images.length - 1
-              ? currentIndex - 1
-              : currentIndex;
-            
+            const newIndex =
+              currentIndex === cameraStore.images.length - 1
+                ? currentIndex - 1
+                : currentIndex;
+
             cameraStore.removeImage(imageToDelete);
-            
+
             // Update current index if needed
             if (currentIndex !== newIndex) {
               setCurrentIndex(newIndex);
-              
+
               // Scroll to the new index
               if (flatListRef.current) {
                 flatListRef.current.scrollToIndex({
@@ -126,11 +156,7 @@ const ImageViewerScreen: React.FC = () => {
     <View style={styles.imageContainer}>
       <TapGestureHandler onHandlerStateChange={onSingleTap} numberOfTaps={1}>
         <View style={styles.imageWrapper}>
-          <FastImage
-            source={{uri: `file://${item}`}}
-            style={styles.image}
-            resizeMode={FastImage.resizeMode.contain}
-          />
+          <BlackAndWhiteImage uri={`file://${item}`} />
         </View>
       </TapGestureHandler>
     </View>
@@ -244,6 +270,9 @@ const styles = StyleSheet.create({
   image: {
     width: width,
     height: height - 100,
+  },
+  imagePlaceholder: {
+    backgroundColor: '#333',
   },
 });
 

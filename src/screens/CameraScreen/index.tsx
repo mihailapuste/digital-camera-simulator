@@ -18,8 +18,8 @@ import {RootStackParamList} from '@navigation/types';
 import {useStores} from '@stores/index';
 import PowerShotSD1000Camera, {
   PowerShotSD1000CameraHandle,
-} from '../components/PowerShotSD1000Camera';
-import CameraControls from '../components/CameraControls';
+} from '@components/PowerShotSD1000Camera';
+import CameraControls from '@components/CameraControls';
 
 type CameraScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
