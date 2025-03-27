@@ -65,9 +65,9 @@ const ImageViewerScreen: React.FC = () => {
   };
 
   // Single tap handler to toggle header visibility
-  const onSingleTap = event => {
+  const onSingleTap = (event: any) => {
     if (event.nativeEvent.state === State.ACTIVE) {
-      setHeaderVisible(!headerVisible);
+      setHeaderVisible(prevState => !prevState);
     }
   };
 
