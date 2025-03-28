@@ -217,18 +217,21 @@ const ImageView = ({uri}: {uri: string}) => {
 
   return (
     <View style={styles.imageContainer}>
+      <View style={styles.topBar}>
+        <View style={styles.spacer} />
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleSaveToGallery}
+          activeOpacity={0.7}
+          disabled={isSaving}>
+          {isSaving ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save</Text>
+          )}
+        </TouchableOpacity>
+      </View>
       <OldDigitalCameraImage ref={imageRef} uri={uri} />
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={handleSaveToGallery}
-        activeOpacity={0.7}
-        disabled={isSaving}>
-        {isSaving ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={styles.saveButtonText}>Save</Text>
-        )}
-      </TouchableOpacity>
     </View>
   );
 };
@@ -242,17 +245,32 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     marginTop: 0,
   },
-  saveButton: {
+  topBar: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: '#333',
-    padding: 10,
-    borderRadius: 5,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    zIndex: 100,
+  },
+  spacer: {
+    width: 50,
+  },
+  saveButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 100,
   },
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
   },
   image: {
     flex: 1,
