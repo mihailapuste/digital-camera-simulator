@@ -1,5 +1,13 @@
-import React, {useRef, forwardRef, useImperativeHandle} from 'react';
-import {View, StyleSheet, Dimensions} from 'react-native';
+import React, {useRef, forwardRef, useImperativeHandle, useState} from 'react';
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Alert,
+  TouchableOpacity,
+  ActivityIndicator,
+  Text,
+} from 'react-native';
 import {
   Canvas,
   Image,
@@ -13,6 +21,8 @@ import {
   useCanvasRef,
 } from '@shopify/react-native-skia';
 import * as RNFS from 'react-native-fs';
+import {observer} from 'mobx-react-lite';
+import {useStores} from '@/stores';
 
 const {width, height} = Dimensions.get('window');
 
@@ -62,123 +72,166 @@ interface ImageViewProps {
 }
 
 // Old digital camera effect component using Skia
-const OldDigitalCameraImage = forwardRef<ImageViewHandle, {uri: string}>(({uri}, ref) => {
-  const image = useImage(uri);
-  // Set a fixed pixel size for the pixelation effect
-  const pixelSize = 0.004; // Fine pixelation level
-  const sharpenAmount = 0.5; // Increased sharpening intensity
-  const canvasRef = useCanvasRef();
+const OldDigitalCameraImage = forwardRef<ImageViewHandle, {uri: string}>(
+  ({uri}, ref) => {
+    const image = useImage(uri);
+    // Set a fixed pixel size for the pixelation effect
+    const pixelSize = 0.004; // Fine pixelation level
+    const sharpenAmount = 0.5; // Increased sharpening intensity
+    const canvasRef = useCanvasRef();
 
-  // Method to capture the canvas as an image
-  const captureFilteredImage = async (): Promise<string | null> => {
-    if (!canvasRef.current) {
-      console.error('Canvas ref is not available');
-      return null;
-    }
-
-    try {
-      // Create a snapshot of the canvas
-      const snapshot = canvasRef.current.makeImageSnapshot();
-      if (!snapshot) {
-        console.error('Failed to create snapshot');
+    // Method to capture the canvas as an image
+    const captureFilteredImage = async (): Promise<string | null> => {
+      if (!canvasRef.current) {
+        console.error('Canvas ref is not available');
         return null;
       }
 
-      // Convert to base64
-      const data = snapshot.encodeToBase64();
-      
-      // Create a temporary file path
-      const tempFilePath = `${RNFS.CachesDirectoryPath}/filtered_image_${Date.now()}.png`;
-      
-      // Write the base64 data to a file
-      await RNFS.writeFile(tempFilePath, data, 'base64');
-      
-      console.log('Filtered image saved to:', tempFilePath);
-      return tempFilePath;
+      try {
+        // Create a snapshot of the canvas
+        const snapshot = canvasRef.current.makeImageSnapshot();
+        if (!snapshot) {
+          console.error('Failed to create snapshot');
+          return null;
+        }
+
+        // Convert to base64
+        const data = snapshot.encodeToBase64();
+
+        // Create a temporary file path
+        const tempFilePath = `${
+          RNFS.CachesDirectoryPath
+        }/filtered_image_${Date.now()}.png`;
+
+        // Write the base64 data to a file
+        await RNFS.writeFile(tempFilePath, data, 'base64');
+
+        console.log('Filtered image saved to:', tempFilePath);
+        return tempFilePath;
+      } catch (error) {
+        console.error('Error capturing filtered image:', error);
+        return null;
+      }
+    };
+
+    useImperativeHandle(ref, () => ({
+      captureFilteredImage,
+    }));
+
+    if (!image) {
+      return <View style={[styles.image, styles.imagePlaceholder]} />;
+    }
+
+    return (
+      <Canvas ref={canvasRef} style={styles.image}>
+        <Fill>
+          <Shader
+            source={sharpenShader}
+            uniforms={{
+              u_resolution: [width, height * 0.8],
+              u_amount: sharpenAmount,
+            }}>
+            <ImageShader
+              image={image}
+              fit="contain"
+              rect={{x: 0, y: 0, width: width, height: height * 0.8}}
+            />
+          </Shader>
+        </Fill>
+        {/* First, apply the pixelation shader */}
+        <Fill>
+          <Shader
+            source={pixelateShader}
+            uniforms={{
+              u_resolution: [width, height * 0.8],
+              u_pixelSize: pixelSize,
+            }}>
+            <ImageShader
+              image={image}
+              fit="contain"
+              rect={{x: 0, y: 0, width: width, height: height * 0.8}}
+            />
+          </Shader>
+        </Fill>
+        {/* Apply sharpen effect */}
+
+        {/* Apply color matrix for the vintage look with reduced exposure */}
+        <Image
+          image={image}
+          fit="contain"
+          x={0}
+          y={0}
+          width={width}
+          height={height * 0.8}
+          opacity={0.7}>
+          {/* Apply high saturation with reduced exposure for old digital camera look */}
+        </Image>
+        {/* Add noise overlay */}
+        <Rect x={0} y={0} width={width} height={height * 0.8} opacity={0.12}>
+          <FractalNoise freqX={0.03} freqY={0.03} octaves={10} />
+        </Rect>
+      </Canvas>
+    );
+  },
+);
+
+const ImageView = ({uri}: {uri: string}) => {
+  const imageRef = useRef<ImageViewHandle>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const {cameraStore} = useStores();
+
+  // Save the current image with filters to the gallery
+  const handleSaveToGallery = async () => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Get the current image view reference
+      const currentImageRef = imageRef.current;
+      if (!currentImageRef) {
+        Alert.alert('Error', 'Could not access the image');
+        return;
+      }
+
+      // Capture the filtered image
+      const filteredImagePath = await currentImageRef.captureFilteredImage();
+      if (!filteredImagePath) {
+        Alert.alert('Error', 'Failed to capture the filtered image');
+        return;
+      }
+
+      // Save to gallery
+      await cameraStore.saveToGallery(filteredImagePath);
+
+      // Show success message
+      Alert.alert('Success', 'Image saved to gallery with filters applied');
     } catch (error) {
-      console.error('Error capturing filtered image:', error);
-      return null;
+      console.error('Error saving to gallery:', error);
+      Alert.alert('Error', 'Failed to save image to gallery');
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  useImperativeHandle(ref, () => ({
-    captureFilteredImage,
-  }));
-
-  if (!image) {
-    return <View style={[styles.image, styles.imagePlaceholder]} />;
-  }
-
-  return (
-    <Canvas ref={canvasRef} style={styles.image}>
-      <Fill>
-        <Shader
-          source={sharpenShader}
-          uniforms={{
-            u_resolution: [width, height * 0.8],
-            u_amount: sharpenAmount,
-          }}>
-          <ImageShader
-            image={image}
-            fit="contain"
-            rect={{x: 0, y: 0, width: width, height: height * 0.8}}
-          />
-        </Shader>
-      </Fill>
-      {/* First, apply the pixelation shader */}
-      <Fill>
-        <Shader
-          source={pixelateShader}
-          uniforms={{
-            u_resolution: [width, height * 0.8],
-            u_pixelSize: pixelSize,
-          }}>
-          <ImageShader
-            image={image}
-            fit="contain"
-            rect={{x: 0, y: 0, width: width, height: height * 0.8}}
-          />
-        </Shader>
-      </Fill>
-      {/* Apply sharpen effect */}
-
-      {/* Apply color matrix for the vintage look with reduced exposure */}
-      <Image
-        image={image}
-        fit="contain"
-        x={0}
-        y={0}
-        width={width}
-        height={height * 0.8}
-        opacity={0.7}>
-        {/* Apply high saturation with reduced exposure for old digital camera look */}
-      </Image>
-      {/* Add noise overlay */}
-      <Rect x={0} y={0} width={width} height={height * 0.8} opacity={0.12}>
-        <FractalNoise freqX={0.03} freqY={0.03} octaves={10} />
-      </Rect>
-    </Canvas>
-  );
-});
-
-const ImageView = forwardRef<ImageViewHandle, ImageViewProps>(({uri}, ref) => {
-  const imageRef = useRef<ImageViewHandle>(null);
-
-  useImperativeHandle(ref, () => ({
-    captureFilteredImage: async () => {
-      if (imageRef.current) {
-        return imageRef.current.captureFilteredImage();
-      }
-      return null;
-    },
-  }));
 
   return (
     <View style={styles.imageContainer}>
       <OldDigitalCameraImage ref={imageRef} uri={uri} />
+      <TouchableOpacity
+        style={styles.saveButton}
+        onPress={handleSaveToGallery}
+        activeOpacity={0.7}
+        disabled={isSaving}>
+        {isSaving ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.saveButtonText}>Save</Text>
+        )}
+      </TouchableOpacity>
     </View>
   );
-});
+};
 
 const styles = StyleSheet.create({
   imageContainer: {
@@ -188,6 +241,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 0,
     marginTop: 0,
+  },
+  saveButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 5,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
   image: {
     flex: 1,
@@ -199,4 +264,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ImageView;
+export default observer(ImageView);
