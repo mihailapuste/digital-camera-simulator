@@ -1,4 +1,10 @@
-import React, {useRef, forwardRef, useImperativeHandle, useState} from 'react';
+import React, {
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+  useState,
+  memo,
+} from 'react';
 import {
   View,
   StyleSheet,
@@ -65,10 +71,6 @@ half4 main(vec2 xy) {
 
 export interface ImageViewHandle {
   captureFilteredImage: () => Promise<string | null>;
-}
-
-interface ImageViewProps {
-  uri: string;
 }
 
 // Old digital camera effect component using Skia
@@ -282,4 +284,8 @@ const styles = StyleSheet.create({
   },
 });
 
-export default observer(ImageView);
+const areEqual = (prevProps: {uri: string}, nextProps: {uri: string}) => {
+  return prevProps.uri === nextProps.uri;
+};
+
+export default memo(observer(ImageView), areEqual);
