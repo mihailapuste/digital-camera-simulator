@@ -35,11 +35,9 @@ const ImageViewerScreen: React.FC = () => {
 
   const insets = useSafeAreaInsets();
 
-  // Get the initial index from the route params
   const initialIndex = route.params.initialIndex;
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
-  // Scroll to the initial index when the component mounts
   useEffect(() => {
     if (flatListRef.current && initialIndex > 0) {
       flatListRef.current.scrollToIndex({
@@ -49,7 +47,6 @@ const ImageViewerScreen: React.FC = () => {
     }
   }, [initialIndex, flatListRef]);
 
-  // Handle scroll end to update the current index
   const handleViewableItemsChanged = useRef(({viewableItems}: any) => {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index);
@@ -60,7 +57,6 @@ const ImageViewerScreen: React.FC = () => {
     itemVisiblePercentThreshold: 50,
   };
 
-  // Render each image in full screen
   const renderItem = ({item}: {item: string}) => (
     <ImageView uri={`file://${item}`} />
   );
@@ -69,7 +65,6 @@ const ImageViewerScreen: React.FC = () => {
     <GestureHandlerRootView style={styles.container}>
       <StatusBar hidden />
       <SafeAreaView style={styles.container}>
-        {/* Header with back button and counter */}
         <View style={[styles.header]}>
           <TouchableOpacity
             style={styles.backButton}
@@ -82,7 +77,6 @@ const ImageViewerScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Full screen image gallery with horizontal swiping */}
         <FlashList
           ref={flatListRef}
           data={cameraStore.images}
