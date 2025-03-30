@@ -182,7 +182,6 @@ const ImageView = ({uri}: {uri: string}) => {
   const [isSaving, setIsSaving] = useState(false);
   const {cameraStore} = useStores();
 
-  // Save the current image with filters to the gallery
   const handleSaveToGallery = async () => {
     if (isSaving) {
       return;
@@ -190,24 +189,19 @@ const ImageView = ({uri}: {uri: string}) => {
 
     setIsSaving(true);
     try {
-      // Get the current image view reference
       const currentImageRef = imageRef.current;
       if (!currentImageRef) {
         Alert.alert('Error', 'Could not access the image');
         return;
       }
 
-      // Capture the filtered image
       const filteredImagePath = await currentImageRef.captureFilteredImage();
       if (!filteredImagePath) {
         Alert.alert('Error', 'Failed to capture the filtered image');
         return;
       }
 
-      // Save to gallery
       await cameraStore.saveToGallery(filteredImagePath);
-
-      // Show success message
       Alert.alert('Success', 'Image saved to gallery with filters applied');
     } catch (error) {
       console.error('Error saving to gallery:', error);
