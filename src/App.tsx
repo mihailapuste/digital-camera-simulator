@@ -4,6 +4,9 @@ import AppNavigator from '@navigation/AppNavigator';
 import {StoreProvider} from '@stores/index';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {StyleSheet} from 'react-native';
+import {SetupToadly} from '@services/ToadlyService';
+
+SetupToadly();
 
 /**
  * Main App component that sets up providers and navigation
