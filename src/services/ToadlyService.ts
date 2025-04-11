@@ -24,13 +24,20 @@ export const SetupToadly = (): void => {
 
     Toadly.enableAutomaticIssueSubmission();
     Toadly.startNetworkMonitoring();
-    
-
-    RNShake.addListener(() => {
-        Toadly.show();
-    });
 
     } catch (error) {
         console.error('Failed to setup Toadly:', error);
+    }
+};
+
+export const showToadlyReportDialog = () => {
+    if (!hasBeenSetup) {
+        throw new Error('Toadly has not been setup');
+    }
+    
+    try {
+        Toadly.show();
+    } catch (error) {
+        console.error('Failed to show Toadly report dialog:', error);
     }
 };

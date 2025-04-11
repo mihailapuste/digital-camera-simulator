@@ -3,8 +3,10 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import AppNavigator from '@navigation/AppNavigator';
 import {StoreProvider} from '@stores/index';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, Appearance} from 'react-native';
 import {SetupToadly} from '@services/ToadlyService';
+
+Appearance.setColorScheme('light');
 
 SetupToadly();
 
