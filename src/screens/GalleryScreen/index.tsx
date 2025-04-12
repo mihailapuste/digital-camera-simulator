@@ -17,6 +17,7 @@ import {RootStackParamList} from '@navigation/types';
 import FastImage from 'react-native-fast-image';
 import {FlashList} from '@shopify/flash-list';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { showToadlyReportDialog } from '@/services/ToadlyService';
 
 type GalleryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -108,7 +109,11 @@ const GalleryScreen: React.FC = () => {
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Gallery</Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity
+
+          onPress={() => showToadlyReportDialog()}>
+          <Text style={styles.needHelpButton}>Need Help?</Text>
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -211,6 +216,10 @@ const styles = StyleSheet.create({
   flashListContainer: {
     flex: 1,
     width: '100%',
+  },
+  needHelpButton: {
+    fontSize: 16,
+    color: '#fff',
   },
 });
 
