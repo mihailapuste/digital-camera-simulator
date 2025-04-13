@@ -69,7 +69,7 @@ const PowerShotSD1000Camera = forwardRef<
               enableZoomGesture={false}
               videoStabilizationMode="off"
               photoHdr={true}
-              fps={40}
+              fps={30} // 40 is not supported on all devices
             />
           </View>
         )}
