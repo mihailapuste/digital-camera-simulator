@@ -116,4 +116,7 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+    
+    // Explicitly include worklets library for proper linking with VisionCamera
+    implementation project(':react-native-worklets-core')
 }

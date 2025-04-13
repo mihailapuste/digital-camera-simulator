@@ -1381,27 +1381,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-shake (6.0.0-beta.3):
-    - DoubleConversion
-    - glog
-    - hermes-engine
-    - RCT-Folly (= 2024.11.18.00)
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - Yoga
   - react-native-skia (2.0.0-next.1):
     - DoubleConversion
     - glog
@@ -2037,7 +2016,7 @@ PODS:
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.10)
   - SocketRocket (0.7.1)
-  - Toadly (0.3.2):
+  - Toadly (0.3.3):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2117,7 +2096,6 @@ DEPENDENCIES:
   - "react-native-cameraroll (from `../node_modules/@react-native-camera-roll/camera-roll`)"
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
-  - react-native-shake (from `../node_modules/react-native-shake`)
   - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - react-native-worklets-core (from `../node_modules/react-native-worklets-core`)
@@ -2252,8 +2230,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-pager-view"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
-  react-native-shake:
-    :path: "../node_modules/react-native-shake"
   react-native-skia:
     :path: "../node_modules/@shopify/react-native-skia"
   react-native-view-shot:
@@ -2382,7 +2358,6 @@ SPEC CHECKSUMS:
   react-native-cameraroll: b93d0a5f753817f337cb32a5e245814f6961c628
   react-native-pager-view: cda3e94765176877702695c4b8c4b5ca69cb2f16
   react-native-safe-area-context: 0f14bce545abcdfbff79ce2e3c78c109f0be283e
-  react-native-shake: 68f87a1f6b61620353e1795e14768edcae7d6e85
   react-native-skia: 4c820a868d2646e9fe7cb1bafaa3eecae5fd9f78
   react-native-view-shot: a38d952d5c7103b79a67c8aa82da95f98be6e5c2
   react-native-worklets-core: f727f5fec8341810b65c7f6bed9f05215f464991
@@ -2425,7 +2400,7 @@ SPEC CHECKSUMS:
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
   SDWebImageWebPCoder: 908b83b6adda48effe7667cd2b7f78c897e5111d
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
-  Toadly: 175a313efcfb3aabcd4090f86c2b6a754cbf9be8
+  Toadly: 381b9d1f3e8e071218788df213afbef2f506da7c
   VisionCamera: 52b101a7fa0a70ff455163c5a121d8dfe9871ab7
   Yoga: b94ff2d7559cb66837c97a3f394ddb817faad4d6
 

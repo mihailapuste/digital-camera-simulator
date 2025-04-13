@@ -1,6 +1,5 @@
 import {config} from '../config';
 import * as Toadly from 'react-native-toadly';
-import RNShake from 'react-native-shake';
 
 let hasBeenSetup = false;
 
@@ -30,11 +29,15 @@ export const SetupToadly = (): void => {
     }
 };
 
+export const testCrashJs = () => {
+    throw new Error('Test crash');
+};
+
 export const showToadlyReportDialog = () => {
     if (!hasBeenSetup) {
         throw new Error('Toadly has not been setup');
     }
-    
+
     try {
         Toadly.show();
     } catch (error) {
