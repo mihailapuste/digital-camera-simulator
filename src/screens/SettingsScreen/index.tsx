@@ -11,6 +11,7 @@ import {
 import {observer} from 'mobx-react-lite';
 import {useNavigation} from '@react-navigation/native';
 import {useStores} from '@stores/index';
+import {showToadlyReportDialog, testCrashJs} from '@services/ToadlyService';
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -24,6 +25,12 @@ const SettingsScreen: React.FC = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.reportButton}
+          onPress={() => showToadlyReportDialog()}>
+          <Text style={styles.reportButtonText}>Need Help?</Text>
         </TouchableOpacity>
       </View>
 
@@ -101,6 +108,12 @@ const SettingsScreen: React.FC = () => {
             thumbColor={settingsStore.showGridLines ? '#ffffff' : '#f4f3f4'}
           />
         </View>
+
+        <TouchableOpacity
+          style={styles.crashButton}
+          onPress={() => testCrashJs()}>
+          <Text style={styles.crashButtonText}>Test Crash</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -164,5 +177,30 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     color: 'black',
+  },
+  reportButton: {
+    position: 'absolute',
+    right: 16,
+  },
+  reportButtonText: {
+    color: '#2196F3',
+    fontSize: 16,
+  },
+  crashButton: {
+    color: '#2196F3',
+    fontSize: 16,
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 4,
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    width: 200,
+
+  },
+  crashButtonText: {
+    color: 'red',
+    fontSize: 16,
   },
 });

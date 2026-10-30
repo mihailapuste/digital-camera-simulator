@@ -69,7 +69,7 @@ const PowerShotSD1000Camera = forwardRef<
               enableZoomGesture={false}
               videoStabilizationMode="off"
               photoHdr={true}
-              fps={40}
+              fps={30} // 40 is not supported on all devices
             />
           </View>
         )}
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 4,
     borderColor: '#55554F',
-    top: '7%',
+    top: '9%',
     left: '8%',
   },
   skinContainer: {

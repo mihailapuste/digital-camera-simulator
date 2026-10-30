@@ -5866,6 +5866,11 @@ react-native-is-edge-to-edge@1.1.6:
   resolved "https://registry.npmjs.org/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.1.6.tgz"
   integrity sha512-1pHnFTlBahins6UAajXUqeCOHew9l9C2C8tErnpGC3IyLJzvxD+TpYAixnCbrVS52f7+NvMttbiSI290XfwN0w==
 
+react-native-nitro-modules@^0.25.2:
+  version "0.25.2"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.25.2.tgz#3d03869934854d7509c2f0dbaf4dca83d6969faf"
+  integrity sha512-rL+X0LzB8BXvpdrUE/+oZ5v4qS/1nZIq0M8Uctbvqq2q53sVCHX4995ffT8+lGIJe/f0QcBvvrEeXtBPl86iwQ==
+
 react-native-pager-view@^6.7.0:
   version "6.7.0"
   resolved "https://registry.yarnpkg.com/react-native-pager-view/-/react-native-pager-view-6.7.0.tgz#88f2520e85f07ce55f3f56c57d6637249a215160"
@@ -5910,6 +5915,11 @@ react-native-svg@^15.11.2:
     css-select "^5.1.0"
     css-tree "^1.1.3"
     warn-once "0.1.1"
+
+react-native-toadly@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/react-native-toadly/-/react-native-toadly-0.3.3.tgz#e6516137faf3597f31d13f6f2a69f4d50ffa0296"
+  integrity sha512-oLarhGo+cFIdzvtZkgwEQe+OhEwQxA/s0bOEIA1NTJH6m5H9NH4MQ8iGIwqOd26q845LLTKEQhigiVqxvRK4jg==
 
 react-native-view-shot@^4.0.3:
   version "4.0.3"
