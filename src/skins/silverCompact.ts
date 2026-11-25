@@ -13,17 +13,16 @@ import {
 } from './sceneModel';
 import {
   bezelRing,
-  powerGlyph,
   punchedRoundRect,
   type RoundBox,
 } from './shapes';
-import type {SkinLayout} from './types';
+import type {DesignRect, SkinLayout} from './types';
 
 /**
  * Landscape back of the LUMEN L-80, in the orientation you would hold the
  * camera to take a landscape photo. `rotation: 90` turns this clockwise onto
- * a portrait phone: hinge along the top, SET/MENU down the left edge,
- * viewfinder on the right, and the control deck along the bottom.
+ * a portrait phone: SET/MENU down the left edge, viewfinder on the right,
+ * and the control deck along the bottom.
  *
  * Coordinates here are the unrotated design. `resolveSkinLayout` maps them.
  */
@@ -38,33 +37,28 @@ export const silverCompactMeta = {
 export const silverCompactLayout: SkinLayout = {
   viewBox: {width: 780, height: 360},
   rotation: 90,
-  lcd: {x: 150, y: 70, width: 280, height: 210},
+  lcd: {x: 96, y: 62, width: 236, height: 236},
   controls: {
-    shutter: {x: 474, y: 8, width: 108, height: 108},
-    zoomOut: {x: 656, y: 14, width: 56, height: 46},
-    zoomIn: {x: 716, y: 14, width: 56, height: 46},
-    power: {x: 348, y: 8, width: 44, height: 44},
-    set: {x: 168, y: 286, width: 62, height: 46},
-    menu: {x: 252, y: 286, width: 84, height: 46},
-    mode: {x: 586, y: 62, width: 64, height: 46},
-    review: {x: 586, y: 10, width: 64, height: 46},
-    flash: {x: 456, y: 168, width: 56, height: 56},
-    func: {x: 712, y: 196, width: 56, height: 48},
-    display: {x: 712, y: 258, width: 56, height: 48},
+    shutter: {x: 466, y: 32, width: 108, height: 108},
+    zoomOut: {x: 615, y: 32, width: 55, height: 48},
+    zoomIn: {x: 681, y: 32, width: 55, height: 48},
+    viewfinder: {x: 362, y: 18, width: 67.5, height: 57.5},
+    set: {x: 229, y: 306, width: 54, height: 46},
+    menu: {x: 353, y: 306, width: 54, height: 46},
+    mode: {x: 615, y: 100, width: 55, height: 48},
+    review: {x: 681, y: 100, width: 55, height: 48},
+    flash: {x: 494, y: 199, width: 52, height: 52},
+    func: {x: 615, y: 176, width: 121, height: 52},
+    display: {x: 615, y: 248, width: 121, height: 52},
   },
 };
 
 /**
- * Engraved words, in landscape pixels. Text uses only the 5×7 pixel font
- * (no system-font fallback). The SET key icon is drawn beside the word.
- * Every box sits on the metal and clear of the buttons.
+ * Engraved body text in landscape pixels. Button labels are drawn on the
+ * keys themselves.
  */
 export const silverCompactLabels = {
   dcIn: {text: 'DC IN', x: 100, y: 338, width: pixelTextWidth('DC IN', 2), height: 14},
-  set: {text: 'SET', x: 174, y: 338, width: pixelTextWidth('SET', 2), height: 14},
-  menu: {text: 'MENU', x: 271, y: 338, width: pixelTextWidth('MENU', 2), height: 14},
-  func: {text: 'FUNC.', x: 648, y: 213, width: pixelTextWidth('FUNC.', 2), height: 14},
-  disp: {text: 'DISP.', x: 648, y: 275, width: pixelTextWidth('DISP.', 2), height: 14},
 } as const;
 
 export const silverCompactCutout: RoundBox = {
@@ -77,8 +71,8 @@ const ENGRAVED = '#5C5852';
 const BLUE = '#2F74B8';
 const RED = '#D64545';
 
-const shell: RoundBox = {x: 8, y: 6, width: 764, height: 350, radius: 28};
-const face: RoundBox = {x: 16, y: 12, width: 748, height: 342, radius: 24};
+const shell: RoundBox = {x: 0, y: 0, width: 780, height: 360, radius: 0};
+const face: RoundBox = {x: 0, y: 2, width: 780, height: 356, radius: 0};
 
 const gradients: SceneGradient[] = [
   {
@@ -122,33 +116,6 @@ const gradients: SceneGradient[] = [
     ],
   },
   {
-    id: 'hinge-metal',
-    kind: 'linear',
-    x1: 0,
-    y1: 0,
-    x2: 1,
-    y2: 0,
-    stops: [
-      {offset: '0', color: '#B7B1A4'},
-      {offset: '0.35', color: '#F4F0E8'},
-      {offset: '0.7', color: '#C9C3B6'},
-      {offset: '1', color: '#8A8478'},
-    ],
-  },
-  {
-    id: 'dial-face',
-    kind: 'linear',
-    x1: 0,
-    y1: 0,
-    x2: 1,
-    y2: 0,
-    stops: [
-      {offset: '0', color: '#FBF8F3'},
-      {offset: '0.45', color: '#D9D3C6'},
-      {offset: '1', color: '#A39E92'},
-    ],
-  },
-  {
     id: 'key-face',
     kind: 'radial',
     cx: 0.38,
@@ -185,19 +152,7 @@ const gradients: SceneGradient[] = [
       {offset: '1', color: '#141A22'},
     ],
   },
-  {
-    id: 'pad-ring',
-    kind: 'linear',
-    x1: 0,
-    y1: 0,
-    x2: 1,
-    y2: 1,
-    stops: [
-      {offset: '0', color: '#F7F4EE'},
-      {offset: '0.45', color: '#D5CFC3'},
-      {offset: '1', color: '#A9A396'},
-    ],
-  },
+
 ];
 
 function brush(x: number, y: number, width: number, height: number): SceneNode[] {
@@ -214,25 +169,6 @@ function brush(x: number, y: number, width: number, height: number): SceneNode[]
     );
   }
   return nodes;
-}
-
-function hinge(x: number, y: number, width: number, height: number): SceneNode {
-  const barrels = 3;
-  const gap = 8;
-  const barrelH = (height - gap * (barrels - 1)) / barrels;
-  const nodes: SceneNode[] = [];
-  for (let index = 0; index < barrels; index += 1) {
-    const by = y + index * (barrelH + gap);
-    nodes.push(
-      rect(x, by, width, barrelH, {
-        rx: 4,
-        fill: 'url(#hinge-metal)',
-        stroke: '#6E6A62',
-        strokeWidth: 0.8,
-      }),
-    );
-  }
-  return group(nodes);
 }
 
 function roundKey(cx: number, cy: number, r: number): SceneNode {
@@ -285,17 +221,24 @@ function shutterButton(cx: number, cy: number, r: number): SceneNode {
   ]);
 }
 
-function viewfinder(cx: number, cy: number): SceneNode {
+function viewfinder(box: DesignRect): SceneNode {
+  const {x: cx, y: cy} = center(box);
+  const glassSize = 42.5;
   return group([
-    circle(cx, cy + 1.4, 28, {fill: '#8A8478'}),
-    circle(cx, cy, 27, {
+    rect(box.x, box.y, box.width, box.height, {
+      rx: 11,
       fill: 'url(#key-face)',
       stroke: '#6E6A62',
       strokeWidth: 1,
     }),
-    circle(cx, cy, 18, {fill: '#141A22'}),
-    circle(cx, cy, 16, {fill: 'url(#finder-glass)'}),
-    ellipse(cx - 5, cy - 6, 7, 3, {fill: '#FFFFFF', opacity: 0.75}),
+    rect(cx - glassSize / 2, cy - glassSize / 2, glassSize, glassSize, {
+      rx: 4,
+      fill: 'url(#finder-glass)',
+    }),
+    path(
+      `M${cx - 9} ${cy - 3} v-6 h6 M${cx + 3} ${cy - 9} h6 v6 M${cx + 9} ${cy + 3} v6 h-6 M${cx - 3} ${cy + 9} h-6 v-6`,
+      {fill: 'none', stroke: '#E6E9ED', strokeWidth: 1.75},
+    ),
   ]);
 }
 
@@ -304,31 +247,6 @@ function led(cx: number, cy: number, core: string): SceneNode {
     circle(cx, cy, 5.4, {fill: '#3A3A3A', stroke: '#6E6A62', strokeWidth: 0.7}),
     circle(cx, cy, 2.5, {fill: core}),
     circle(cx - 0.8, cy - 0.9, 0.7, {fill: '#FFFFFF', opacity: 0.8}),
-  ]);
-}
-
-function knurledDial(x: number, y: number, width: number, height: number): SceneNode {
-  const ridges: SceneNode[] = [];
-  const count = 14;
-  for (let index = 0; index < count; index += 1) {
-    const rx = x + 8 + (index * (width - 16)) / (count - 1);
-    ridges.push(
-      line(rx, y + 6, rx, y + height - 6, {
-        stroke: index % 2 === 0 ? '#FBF8F3' : '#7A756C',
-        strokeWidth: 1.5,
-        strokeLinecap: 'round',
-      }),
-    );
-  }
-  return group([
-    rect(x, y + 2, width, height, {rx: height / 2, fill: '#8A8478'}),
-    rect(x, y, width, height, {
-      rx: height / 2,
-      fill: 'url(#dial-face)',
-      stroke: '#6E6A62',
-      strokeWidth: 1.1,
-    }),
-    ...ridges,
   ]);
 }
 
@@ -347,128 +265,50 @@ function playGlyph(cx: number, cy: number, color: string): SceneNode {
   });
 }
 
-function tulip(cx: number, cy: number, color: string): SceneNode {
-  const stroke = {
-    fill: 'none' as const,
-    stroke: color,
-    strokeWidth: 1.4,
-    strokeLinecap: 'round' as const,
-  };
-  return group([
-    path(
-      `M${cx - 6} ${cy} C${cx - 6} ${cy - 9}, ${cx - 2} ${cy - 9}, ${cx} ${cy - 4} C${cx + 2} ${cy - 9}, ${cx + 6} ${cy - 9}, ${cx + 6} ${cy}`,
-      stroke,
-    ),
-    line(cx, cy - 4, cx, cy + 7, stroke),
-  ]);
-}
-
-/** Squared plus drawn as vectors. A unicode ⊞ would fall back to a CJK font. */
-function setMark(x: number, y: number, size: number, color: string): SceneNode {
-  return group([
-    rect(x, y, size, size, {
-      fill: 'none',
-      stroke: color,
-      strokeWidth: 1.3,
-    }),
-    line(x + size * 0.5, y + size * 0.22, x + size * 0.5, y + size * 0.78, {
-      stroke: color,
-      strokeWidth: 1.3,
-      strokeLinecap: 'round',
-    }),
-    line(x + size * 0.22, y + size * 0.5, x + size * 0.78, y + size * 0.5, {
-      stroke: color,
-      strokeWidth: 1.3,
-      strokeLinecap: 'round',
-    }),
-  ]);
-}
-
 function engraved(text: string, x: number, y: number, color: string): SceneNode {
   return group(pixelTextNodes(text, x, y, 2, color));
 }
 
-function printerGlyph(x: number, y: number, color: string): SceneNode {
+function labeledKey(box: DesignRect, label: string): SceneNode {
   return group([
-    rect(x + 4, y, 10, 5, {
-      rx: 0.6,
-      fill: '#F7F4EE',
-      stroke: color,
-      strokeWidth: 1,
-    }),
-    rect(x, y + 4, 18, 7, {rx: 1.4, fill: color}),
-    path(`M${x + 14} ${y - 1} L${x + 18} ${y + 2} L${x + 14} ${y + 5}`, {
-      fill: 'none',
-      stroke: color,
-      strokeWidth: 1.3,
-      strokeLinecap: 'round',
-    }),
+    pillKey(box.x, box.y, box.width, box.height),
+    centeredPixelText(label, box, 2, INK),
   ]);
 }
 
-function holeGrid(
-  x: number,
-  y: number,
-  cols: number,
-  rows: number,
-  gap: number,
-): SceneNode {
-  const nodes: SceneNode[] = [];
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      nodes.push(circle(x + col * gap, y + row * gap, 1.7, {fill: '#4A4742'}));
-    }
-  }
-  return group(nodes);
-}
-
-function dPad(cx: number, cy: number): SceneNode {
-  return group([
-    circle(cx, cy + 2, 60, {fill: '#8A8478'}),
-    circle(cx, cy, 58, {
-      fill: 'url(#pad-ring)',
-      stroke: '#6E6A62',
-      strokeWidth: 1.3,
-    }),
-    circle(cx, cy, 36, {fill: '#D5CFC3'}),
-    circle(cx, cy, 22, {
-      fill: 'url(#key-face)',
-      stroke: '#8A8478',
-      strokeWidth: 1,
-    }),
-    boltNode(cx - 52, cy - 8, 15, INK),
-    tulip(cx + 36, cy - 2, INK),
-    centeredPixelText('MF', {x: cx + 28, y: cy + 6, width: 22, height: 14}, 2, INK),
-  ]);
+function center(box: DesignRect) {
+  return {x: box.x + box.width / 2, y: box.y + box.height / 2};
 }
 
 function buildSilverCompactScene(): Scene {
   const {lcd, controls} = silverCompactLayout;
   const panel: RoundBox = {
     x: lcd.x - 16,
-    y: lcd.y - 14,
+    y: lcd.y - 10,
     width: lcd.width + 30,
-    height: lcd.height + 26,
+    height: lcd.height + 15,
     radius: 12,
   };
   const shutter = controls.shutter;
-  const dialX = controls.zoomOut.x;
-  const dialW =
-    controls.zoomIn.x + controls.zoomIn.width - controls.zoomOut.x;
-  const dialY = controls.zoomOut.y;
-  const dialH = controls.zoomOut.height;
-  const power = controls.power;
+  const {zoomOut, zoomIn} = controls;
+  const zoomPanelInset = 8;
+  const camera = center(controls.mode);
+  const playback = center(controls.review);
+  const flash = center(controls.flash);
 
   return {
     viewBox: silverCompactLayout.viewBox,
     gradients,
     nodes: [
-      ellipse(760, 180, 14, 150, {fill: '#000000', opacity: 0.1}),
       punchedRoundRect(shell, silverCompactCutout, {fill: 'url(#body-edge)'}),
       punchedRoundRect(face, silverCompactCutout, {fill: 'url(#body-face)'}),
       ...brush(24, 18, 200, 40),
-      ...brush(470, 120, 280, 200),
-      hinge(2, lcd.y + 6, 20, lcd.height - 8),
+      rect(444, 18, 306, 310, {
+        rx: 24,
+        fill: 'url(#panel-face)',
+        stroke: '#B2AA9D',
+        strokeWidth: 1,
+      }),
       punchedRoundRect(panel, silverCompactCutout, {
         fill: 'url(#panel-face)',
         stroke: '#8A8478',
@@ -477,33 +317,23 @@ function buildSilverCompactScene(): Scene {
       bezelRing(silverCompactCutout, 7, '#23272B'),
       bezelRing(silverCompactCutout, 3, '#5E656C'),
       bezelRing(silverCompactCutout, 1, '#C5CCD2'),
-      viewfinder(290, 28),
-      led(328, 20, '#3FAE67'),
-      led(346, 36, '#E0A24A'),
-      roundKey(
-        power.x + power.width / 2,
-        power.y + power.height / 2,
-        power.width / 2 - 1,
-      ),
-      ...powerGlyph(
-        power.x + power.width / 2,
-        power.y + power.height / 2,
-        7,
-        INK,
-      ),
+      viewfinder(controls.viewfinder),
+      led(331, 28, '#3FAE67'),
+      led(347, 28, '#E0A24A'),
       shutterButton(
         shutter.x + shutter.width / 2,
         shutter.y + shutter.height / 2,
         shutter.width / 2 - 4,
       ),
-      knurledDial(dialX, dialY, dialW, dialH),
-      centeredPixelText('W', {x: dialX + 4, y: dialY + 12, width: 22, height: 20}, 2, INK),
-      centeredPixelText(
-        'T',
-        {x: dialX + dialW - 26, y: dialY + 12, width: 22, height: 20},
-        2,
-        INK,
+      rect(
+        zoomOut.x - zoomPanelInset,
+        zoomOut.y - zoomPanelInset,
+        zoomIn.x + zoomIn.width - zoomOut.x + zoomPanelInset * 2,
+        zoomOut.height + zoomPanelInset * 2,
+        {rx: 23, fill: '#CEC8BC', stroke: '#A29A8E', strokeWidth: 1},
       ),
+      labeledKey(zoomOut, 'W'),
+      labeledKey(zoomIn, 'T'),
       rect(94, 330, 72, 24, {
         rx: 4,
         fill: '#B7B1A4',
@@ -512,44 +342,18 @@ function buildSilverCompactScene(): Scene {
       }),
       rect(100, 336, 60, 4, {rx: 1, fill: '#8A8478'}),
       engraved(silverCompactLabels.dcIn.text, silverCompactLabels.dcIn.x, silverCompactLabels.dcIn.y, ENGRAVED),
-      engraved(silverCompactLabels.set.text, silverCompactLabels.set.x, silverCompactLabels.set.y, ENGRAVED),
-      circle(214, 345, 1.2, {fill: ENGRAVED}),
-      setMark(220, 339, 12, ENGRAVED),
-      engraved(silverCompactLabels.menu.text, silverCompactLabels.menu.x, silverCompactLabels.menu.y, ENGRAVED),
-      pillKey(controls.set.x, controls.set.y, controls.set.width, controls.set.height),
-      pillKey(
-        controls.menu.x,
-        controls.menu.y,
-        controls.menu.width,
-        controls.menu.height,
-      ),
-      rect(584, 8, 68, 102, {rx: 16, fill: '#2E2C29'}),
-      rect(588, 12, 60, 46, {
-        rx: 14,
-        fill: 'url(#key-face)',
-        stroke: '#6E6A62',
-        strokeWidth: 0.8,
-      }),
-      cameraGlyph(604, 78, RED),
-      playGlyph(618, 34, BLUE),
-      dPad(524, 196),
-      engraved(silverCompactLabels.func.text, silverCompactLabels.func.x, silverCompactLabels.func.y, BLUE),
-      engraved(silverCompactLabels.disp.text, silverCompactLabels.disp.x, silverCompactLabels.disp.y, BLUE),
-      roundKey(
-        controls.func.x + controls.func.width / 2,
-        controls.func.y + controls.func.height / 2,
-        20,
-      ),
-      roundKey(
-        controls.display.x + controls.display.width / 2,
-        controls.display.y + controls.display.height / 2,
-        20,
-      ),
-      printerGlyph(656, 132, BLUE),
-      roundKey(740, 150, 16),
-      holeGrid(704, 78, 4, 3, 8),
-      centeredPixelText('LUMEN', {x: 36, y: 168, width: 70, height: 16}, 2, ENGRAVED),
-      centeredPixelText('L-80', {x: 44, y: 186, width: 54, height: 14}, 2, '#8A8478'),
+      labeledKey(controls.set, 'SET'),
+      labeledKey(controls.menu, 'MENU'),
+      pillKey(controls.mode.x, controls.mode.y, controls.mode.width, controls.mode.height),
+      pillKey(controls.review.x, controls.review.y, controls.review.width, controls.review.height),
+      cameraGlyph(camera.x - 9, camera.y - 8, RED),
+      playGlyph(playback.x, playback.y, BLUE),
+      roundKey(flash.x, flash.y, 19),
+      boltNode(flash.x - 11, flash.y - 10, 20, INK),
+      labeledKey(controls.func, 'FUNC'),
+      labeledKey(controls.display, 'DISP'),
+      centeredPixelText('LUMEN', {x: 98, y: 19, width: 70, height: 16}, 2, ENGRAVED),
+      centeredPixelText('L-80', {x: 174, y: 20, width: 54, height: 14}, 2, '#8A8478'),
     ],
   };
 }

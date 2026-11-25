@@ -26,9 +26,12 @@ export type LcdOverlayProps = {
   width?: number | string;
   height?: number | string;
   theme?: LcdThemeName | Partial<LcdTheme>;
+  square?: boolean;
   /** 0–1. At or below 0.2 the cells turn the theme's low color. */
   batteryLevel?: number;
   shotsRemaining?: number;
+  /** Opens playback when the shots counter is pressed. */
+  onOpenPlayback?: () => void;
   flashMode?: FlashMode;
   /** A Date is formatted as YYYY.MM.DD in UTC. A string is drawn as given. */
   date?: Date | string;

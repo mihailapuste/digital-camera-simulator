@@ -2,6 +2,7 @@ import type {FlashMode, FocusState, LcdMode, LcdTheme} from './types';
 
 export type BuildableLcd = {
   theme: LcdTheme;
+  square?: boolean;
   batteryLevel: number;
   shotsRemaining: number;
   flashMode: FlashMode;

@@ -15,7 +15,7 @@ export const SKIN_CONTROLS = [
   'zoomIn',
   'zoomOut',
   'review',
-  'power',
+  'viewfinder',
   'display',
   'func',
   'menu',
@@ -63,13 +63,14 @@ export type ResolvedSkinLayout = {
 export type CameraSkinProps = {
   width: number;
   height: number;
+  rotation?: SkinRotation;
   onShutter?: () => void;
   onFlash?: () => void;
   onMode?: () => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onReview?: () => void;
-  onPower?: () => void;
+  onExpandViewfinder?: () => void;
   /** DISP. Toggles the LCD overlay. */
   onDisplay?: () => void;
   /** FUNC. Opens the preset / look picker. */

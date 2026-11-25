@@ -1,7 +1,15 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {StyleSheet, useWindowDimensions, View} from 'react-native';
+import {
+  BackHandler,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
+import {StatusBar} from 'expo-status-bar';
 import {observer} from 'mobx-react-lite';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {SkinStage} from '../skins';
@@ -17,6 +25,7 @@ import {lcdDateLabel, stampFromSettings} from './stampOptions';
 import {PresetPicker} from './PresetPicker';
 import {ViewfinderPlate} from './ViewfinderPlate';
 import {restingZoom, stepZoom} from './zoom';
+import {sidewaysFrame} from './sidewaysFrame';
 
 const CARD_FRAMES = 68;
 const REVIEW_MS = 1400;
@@ -30,13 +39,18 @@ type HeldCameraProps = {
   hasFlash: boolean;
   minZoom: number;
   maxZoom: number;
-  renderPreview: (state: {zoom: number; active: boolean}) => React.ReactNode;
+  renderPreview: (state: {
+    zoom: number;
+    active: boolean;
+    sideways: boolean;
+  }) => React.ReactNode;
   grabPhoto: (flash: {
     flashMode: 'off' | 'on' | 'auto';
     enableRedEyeReduction: boolean;
     enableShutterSound: boolean;
   }) => Promise<GrabbedPhoto | null>;
   emptyLabel?: string;
+  captureDisabled?: boolean;
 };
 
 function knownPreset(id: string): string {
@@ -48,8 +62,7 @@ function knownPreset(id: string): string {
 }
 
 /**
- * The portrait phone holds the sideways LUMEN L-80. Button hits come from
- * the rotated skin; the plate (preview, grade, stamp, menu) turns with it.
+ * The viewfinder and physical controls follow the camera body layout.
  */
 export const HeldCamera = observer(function HeldCamera({
   hasFlash,
@@ -58,13 +71,16 @@ export const HeldCamera = observer(function HeldCamera({
   renderPreview,
   grabPhoto,
   emptyLabel,
+  captureDisabled = false,
 }: HeldCameraProps) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const {settingsStore, cameraStore} = useStores();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
+  const sideways = window.width < window.height;
+  const [stageSize, setStageSize] = useState({width: 0, height: 0});
   const focused = useIsFocused();
-  const [powered, setPowered] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [overlay, setOverlay] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingPreset, setPendingPreset] = useState(settingsStore.presetId);
@@ -90,6 +106,20 @@ export const HeldCamera = observer(function HeldCamera({
     };
   }, []);
 
+  useEffect(() => {
+    if (!focused || !expanded) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        setExpanded(false);
+        return true;
+      },
+    );
+    return () => subscription.remove();
+  }, [expanded, focused]);
+
   const clearReview = () => {
     if (reviewTimer.current) {
       clearTimeout(reviewTimer.current);
@@ -99,16 +129,12 @@ export const HeldCamera = observer(function HeldCamera({
     setFocus('idle');
   };
 
-  const activePreset = knownPreset(
-    menuOpen ? pendingPreset : settingsStore.presetId,
-  );
+  const activePreset = knownPreset(settingsStore.presetId);
   const stamp = stampFromSettings(settingsStore);
   const shotsRemaining = Math.max(0, CARD_FRAMES - cameraStore.imageCount);
-  const stageWidth = window.width;
-  const stageHeight = Math.max(1, window.height - insets.top - insets.bottom);
 
   const shutter = async () => {
-    if (!powered || cameraStore.isCapturing) {
+    if (captureDisabled || cameraStore.isCapturing) {
       return;
     }
     setMenuOpen(false);
@@ -153,112 +179,204 @@ export const HeldCamera = observer(function HeldCamera({
     }
   };
 
+  const openGallery = () => {
+    clearReview();
+    navigation.navigate('Gallery');
+  };
+
+  const openSettings = () => navigation.navigate('Settings');
+
+  const openPresets = () => {
+    setPendingPreset(knownPreset(settingsStore.presetId));
+    setMenuOpen(true);
+  };
+
+  const applyPreset = () => {
+    settingsStore.setPresetId(knownPreset(pendingPreset));
+    setMenuOpen(false);
+  };
+
+  const takePhoto = () => void shutter();
+  const preview = (
+    <ViewfinderPlate
+      preview={renderPreview({
+        zoom,
+        active: focused && reviewUri == null,
+        sideways,
+      })}
+      reviewUri={reviewUri}
+      presetId={activePreset}
+      stamp={stamp}
+      hudShotsRemaining={!expanded && overlay ? shotsRemaining : undefined}
+      showGrid={settingsStore.showGridLines}
+      busy={cameraStore.isCapturing}
+      emptyLabel={emptyLabel}
+    />
+  );
+
   return (
-    <View style={[styles.root, {paddingTop: insets.top, paddingBottom: insets.bottom}]}>
-      <SkinStage
-        width={stageWidth}
-        height={stageHeight}
-        showLcd={powered && overlay}
-        preview={
-          <ViewfinderPlate
-            preview={renderPreview({
-              zoom,
-              active: focused && powered && reviewUri == null,
-            })}
-            reviewUri={reviewUri}
-            presetId={activePreset}
-            stamp={stamp}
-            showGrid={settingsStore.showGridLines}
-            powered={powered}
-            busy={cameraStore.isCapturing}
-            emptyLabel={emptyLabel}
-          />
-        }
-        foreground={
-          powered && menuOpen ? (
-            <PresetPicker
-              selectedId={pendingPreset}
-              onSelect={setPendingPreset}
+    <View style={styles.root}>
+      {focused ? <StatusBar hidden /> : null}
+      {expanded ? (
+        <View
+          testID="expanded-viewfinder"
+          style={
+            sideways ? sidewaysFrame(window.width, window.height) : styles.stage
+          }>
+          {preview}
+          <View
+            style={[
+              styles.actionBar,
+              {
+                paddingLeft: Math.max(12, sideways ? insets.top : insets.left),
+                paddingRight: Math.max(
+                  12,
+                  sideways ? insets.bottom : insets.right,
+                ),
+                paddingBottom: Math.max(
+                  8,
+                  sideways ? insets.left : insets.bottom,
+                ),
+              },
+            ]}>
+            <ViewfinderAction
+              label="Camera body"
+              onPress={() => setExpanded(false)}
             />
-          ) : null
-        }
-        lcd={{
-          flashMode: settingsStore.flashMode,
-          shotsRemaining,
-          date: lcdDateLabel(settingsStore),
-          focus,
-          mode: reviewUri ? 'review' : 'live',
-          batteryLevel: 1,
-          animated: focus !== 'idle',
-        }}
-        onShutter={() => {
-          void shutter();
-        }}
-        onFlash={() => {
-          if (powered) {
-            settingsStore.cycleFlash();
-          }
-        }}
-        onZoomIn={() => {
-          if (powered) {
-            setZoom(current => stepZoom(current, 'in', minZoom, maxZoom));
-          }
-        }}
-        onZoomOut={() => {
-          if (powered) {
-            setZoom(current => stepZoom(current, 'out', minZoom, maxZoom));
-          }
-        }}
-        onMode={() => {
-          clearReview();
-        }}
-        onModeLongPress={() => {
-          settingsStore.toggleCameraPosition();
-        }}
-        onReview={() => {
-          clearReview();
-          navigation.navigate('Gallery');
-        }}
-        onPower={() => {
-          setPowered(value => !value);
-          setMenuOpen(false);
-          clearReview();
-        }}
-        onDisplay={() => {
-          if (powered) {
-            setOverlay(value => !value);
-          }
-        }}
-        onFunc={() => {
-          if (!powered) {
-            return;
-          }
-          setMenuOpen(open => {
-            if (open) {
-              return false;
-            }
-            setPendingPreset(knownPreset(settingsStore.presetId));
-            return true;
-          });
-        }}
-        onMenu={() => {
-          navigation.navigate('Settings');
-        }}
-        onSet={() => {
-          if (!menuOpen) {
-            return;
-          }
-          settingsStore.setPresetId(knownPreset(pendingPreset));
-          setMenuOpen(false);
-        }}
+            <ViewfinderAction label="Presets" onPress={openPresets} />
+            <ViewfinderAction
+              label="Shutter"
+              onPress={takePhoto}
+              disabled={captureDisabled || cameraStore.isCapturing}
+              primary
+            />
+            <ViewfinderAction label="Playback" onPress={openGallery} />
+          </View>
+        </View>
+      ) : (
+        <View
+          style={styles.stage}
+          onLayout={({
+            nativeEvent: {
+              layout: {width, height},
+            },
+          }) =>
+            setStageSize(current =>
+              current.width === width && current.height === height
+                ? current
+                : {width, height},
+            )
+          }>
+          {stageSize.width > 0 && stageSize.height > 0 ? (
+            <SkinStage
+              width={stageSize.width}
+              height={stageSize.height}
+              rotation={sideways ? 90 : 0}
+              showLcd={overlay}
+              preview={preview}
+              lcd={{
+                flashMode: settingsStore.flashMode,
+                shotsRemaining,
+                onOpenPlayback: openGallery,
+                date: lcdDateLabel(settingsStore),
+                focus,
+                mode: reviewUri ? 'review' : 'live',
+                batteryLevel: 1,
+                animated: focus !== 'idle',
+              }}
+              onExpandViewfinder={() => setExpanded(true)}
+              onShutter={
+                captureDisabled || cameraStore.isCapturing
+                  ? undefined
+                  : takePhoto
+              }
+              onFlash={() => settingsStore.cycleFlash()}
+              onZoomIn={() =>
+                setZoom(current => stepZoom(current, 'in', minZoom, maxZoom))
+              }
+              onZoomOut={() =>
+                setZoom(current => stepZoom(current, 'out', minZoom, maxZoom))
+              }
+              onMode={clearReview}
+              onModeLongPress={() => settingsStore.toggleCameraPosition()}
+              onReview={openGallery}
+              onDisplay={() => setOverlay(value => !value)}
+              onFunc={openPresets}
+              onMenu={openSettings}
+              onSet={openPresets}
+            />
+          ) : null}
+        </View>
+      )}
+      <PresetPicker
+        visible={menuOpen}
+        sideways={sideways}
+        selectedId={pendingPreset}
+        onSelect={setPendingPreset}
+        onCancel={() => setMenuOpen(false)}
+        onApply={applyPreset}
       />
     </View>
   );
 });
 
+function ViewfinderAction({
+  label,
+  onPress,
+  primary = false,
+  disabled = false,
+}: {
+  label: string;
+  onPress: () => void;
+  primary?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.action,
+        primary && styles.primary,
+        disabled && styles.disabled,
+        pressed && styles.pressed,
+      ]}>
+      <Text style={[styles.actionLabel, primary && styles.primaryLabel]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#0c0d10',
+  root: {flex: 1, backgroundColor: '#0c0d10'},
+  stage: {flex: 1},
+  actionBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    paddingTop: 8,
+    backgroundColor: '#181a20',
   },
+  action: {
+    flex: 1,
+    maxWidth: 144,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#2a2e37',
+  },
+  actionLabel: {
+    color: '#f4f7fb',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  primary: {backgroundColor: '#f5c77d'},
+  primaryLabel: {color: '#1a140d'},
+  disabled: {opacity: 0.45},
+  pressed: {opacity: 0.75},
 });

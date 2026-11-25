@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {Pressable, StyleSheet, View} from 'react-native';
 import {LcdOverlay} from '../lcd/LcdOverlay';
 import type {LcdOverlayProps} from '../lcd/types';
 import {resolveSkinLayout} from './resolveLayout';
@@ -30,20 +30,33 @@ export const SkinStage: React.FC<SkinStageProps> = ({
   lcd,
   showLcd = true,
   foreground,
+  rotation,
+  onExpandViewfinder,
   ...callbacks
 }) => {
   const skin = getSkin(skinId);
-  const placed = resolveSkinLayout(skin.layout, {width, height});
+  const layout = {...skin.layout, rotation: rotation ?? skin.layout.rotation};
+  const placed = resolveSkinLayout(layout, {width, height});
   const Body = skin.Component;
-  const turned = skin.layout.rotation === 90;
+  const turned = layout.rotation === 90;
   const plate = (
     <>
       {preview ? <View style={styles.preview}>{preview}</View> : null}
+      {onExpandViewfinder ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Expand camera preview"
+          testID="expand-camera-preview"
+          onPress={onExpandViewfinder}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
       {showLcd ? (
-        <View style={styles.overlay} pointerEvents="none">
+        <View style={styles.overlay} pointerEvents="box-none">
           <LcdOverlay
             theme={skin.lcdTheme}
             {...lcd}
+            square={layout.lcd.width === layout.lcd.height}
             width="100%"
             height="100%"
           />
@@ -53,7 +66,12 @@ export const SkinStage: React.FC<SkinStageProps> = ({
     </>
   );
   return (
-    <Body width={width} height={height} {...callbacks}>
+    <Body
+      width={width}
+      height={height}
+      rotation={rotation}
+      onExpandViewfinder={onExpandViewfinder}
+      {...callbacks}>
       {turned ? (
         <View style={styles.slot}>
           <View

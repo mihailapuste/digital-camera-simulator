@@ -1,21 +1,25 @@
 import React, {useMemo, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {
-  Canvas,
-  Group,
-  RoundedRect,
-} from '@shopify/react-native-skia';
+import {Canvas, Group, RoundedRect} from '@shopify/react-native-skia';
 import {Image} from 'expo-image';
+import {shotCounterLayout} from '../lcd/buildLcdScene';
+import {formatShots} from '../lcd/format';
+import {LCD_VIEWBOX} from '../lcd/types';
 import Svg, {Defs, RadialGradient, Rect, Stop} from 'react-native-svg';
-import {getPreset, useLookPreview, type CcdPreset, type DateStampOptions} from '../look';
+import {
+  getPreset,
+  useLookPreview,
+  type CcdPreset,
+  type DateStampOptions,
+} from '../look';
 
 type ViewfinderPlateProps = {
   preview?: React.ReactNode;
   reviewUri?: string | null;
   presetId: string;
   stamp: DateStampOptions | null;
+  hudShotsRemaining?: number;
   showGrid: boolean;
-  powered: boolean;
   busy: boolean;
   emptyLabel?: string;
 };
@@ -41,7 +45,11 @@ function GradeWash({preset}: {preset: CcdPreset}) {
         <Defs>
           <RadialGradient id="vig" cx="50%" cy="48%" r="62%">
             <Stop offset="0" stopColor="#000000" stopOpacity="0" />
-            <Stop offset="0.62" stopColor="#000000" stopOpacity={vignette * 0.2} />
+            <Stop
+              offset="0.62"
+              stopColor="#000000"
+              stopOpacity={vignette * 0.2}
+            />
             <Stop offset="1" stopColor="#000000" stopOpacity={vignette} />
           </RadialGradient>
           {flash > 0.15 ? (
@@ -65,10 +73,12 @@ function LiveStamp({
   height,
   preset,
   stamp,
+  rightInset,
 }: {
   width: number;
   height: number;
   preset: string;
+  rightInset: number;
   stamp: DateStampOptions | null;
 }) {
   const look = useLookPreview({
@@ -87,7 +97,7 @@ function LiveStamp({
         {plan.marks.map((mark, index) => (
           <RoundedRect
             key={`glow-${index}`}
-            x={mark.x - 0.6}
+            x={mark.x - rightInset - 0.6}
             y={mark.y - 0.6}
             width={mark.width + 1.2}
             height={mark.height + 1.2}
@@ -100,7 +110,7 @@ function LiveStamp({
         {plan.marks.map((mark, index) => (
           <RoundedRect
             key={`core-${index}`}
-            x={mark.x}
+            x={mark.x - rightInset}
             y={mark.y}
             width={mark.width}
             height={mark.height}
@@ -134,8 +144,8 @@ export function ViewfinderPlate({
   reviewUri,
   presetId,
   stamp,
+  hudShotsRemaining,
   showGrid,
-  powered,
   busy,
   emptyLabel,
 }: ViewfinderPlateProps) {
@@ -143,10 +153,13 @@ export function ViewfinderPlate({
   const [size, setSize] = useState({width: 0, height: 0});
   const mono = preset.mono > 0.5;
   const stampKey = useMemo(() => JSON.stringify(stamp), [stamp]);
-
-  if (!powered) {
-    return <View testID="viewfinder-off" style={styles.off} />;
-  }
+  const counter =
+    hudShotsRemaining === undefined
+      ? null
+      : shotCounterLayout(formatShots(hudShotsRemaining));
+  const stampRightInset = counter
+    ? size.width * (1 - counter.x / LCD_VIEWBOX.width)
+    : 0;
 
   return (
     <View
@@ -181,6 +194,7 @@ export function ViewfinderPlate({
           height={size.height}
           preset={preset.id}
           stamp={stamp}
+          rightInset={stampRightInset}
         />
       ) : null}
       {!preview && !reviewUri ? (
@@ -202,10 +216,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#11161f',
     overflow: 'hidden',
-  },
-  off: {
-    flex: 1,
-    backgroundColor: '#050608',
   },
   monoBed: {
     backgroundColor: '#8d8d8d',

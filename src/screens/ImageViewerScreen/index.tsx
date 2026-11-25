@@ -62,16 +62,8 @@ const ImageViewerScreen: React.FC = () => {
   const safeIndex =
     photos.length === 0 ? 0 : Math.min(Math.max(index, 0), photos.length - 1);
   const photo = photos[safeIndex];
-  const pageWidth = windowWidth;
-  const panelHeight = applyOpen ? 300 : infoOpen ? 156 : 0;
-  const stageHeight = Math.max(
-    180,
-    windowHeight -
-      Math.max(insets.top, 10) -
-      64 -
-      panelHeight -
-      (Math.max(insets.bottom, 10) + 52),
-  );
+  const pageWidth = windowWidth - insets.left - insets.right;
+  const [stageHeight, setStageHeight] = useState(0);
 
   useEffect(() => {
     if (photos.length === 0) {
@@ -179,7 +171,10 @@ const ImageViewerScreen: React.FC = () => {
 
   return (
     <View
-      style={[styles.container, {height: windowHeight}]}
+      style={[
+        styles.container,
+        {paddingLeft: insets.left, paddingRight: insets.right},
+      ]}
       testID="viewer-screen">
       <StatusBar hidden />
       <View style={[styles.header, {paddingTop: Math.max(insets.top, 10)}]}>
@@ -201,50 +196,54 @@ const ImageViewerScreen: React.FC = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <View style={styles.stage}>
-        <FlatList
-          ref={listRef}
-          data={photos}
-          horizontal
-          pagingEnabled
-          scrollEnabled={!scrollLocked && busy !== 'bake'}
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={item => `${item.name}:${item.revision}:${item.uri}`}
-          initialScrollIndex={photos.length === 0 ? undefined : safeIndex}
-          getItemLayout={(_data, itemIndex) => ({
-            length: pageWidth,
-            offset: pageWidth * itemIndex,
-            index: itemIndex,
-          })}
-          onMomentumScrollEnd={onScrollEnd}
-          onScrollEndDrag={onScrollEnd}
-          onScrollToIndexFailed={info => {
-            requestAnimationFrame(() => {
-              listRef.current?.scrollToIndex({
-                index: info.index,
-                animated: false,
+      <View
+        style={styles.stage}
+        onLayout={({nativeEvent}) => setStageHeight(nativeEvent.layout.height)}>
+        {stageHeight > 0 ? (
+          <FlatList
+            ref={listRef}
+            data={photos}
+            horizontal
+            pagingEnabled
+            scrollEnabled={!scrollLocked && busy !== 'bake'}
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={item => `${item.name}:${item.revision}:${item.uri}`}
+            initialScrollIndex={photos.length === 0 ? undefined : safeIndex}
+            getItemLayout={(_data, itemIndex) => ({
+              length: pageWidth,
+              offset: pageWidth * itemIndex,
+              index: itemIndex,
+            })}
+            onMomentumScrollEnd={onScrollEnd}
+            onScrollEndDrag={onScrollEnd}
+            onScrollToIndexFailed={info => {
+              requestAnimationFrame(() => {
+                listRef.current?.scrollToIndex({
+                  index: info.index,
+                  animated: false,
+                });
               });
-            });
-          }}
-          renderItem={({item}) => (
-            <View style={{width: pageWidth, height: stageHeight}}>
-              <ZoomablePhoto
-                uri={item.uri}
-                cacheKey={`${item.name}:${item.revision}`}
-                width={pageWidth}
-                height={stageHeight}
-                active={item.uri === photo?.uri}
-                onZoomedChange={onZoomedChange}
-              />
-              {busy === 'bake' && item.uri === photo?.uri ? (
-                <View style={styles.baking}>
-                  <ActivityIndicator color={playback.amber} />
-                  <Text style={styles.bakingText}>BAKING</Text>
-                </View>
-              ) : null}
-            </View>
-          )}
-        />
+            }}
+            renderItem={({item}) => (
+              <View style={{width: pageWidth, height: stageHeight}}>
+                <ZoomablePhoto
+                  uri={item.uri}
+                  cacheKey={`${item.name}:${item.revision}`}
+                  width={pageWidth}
+                  height={stageHeight}
+                  active={item.uri === photo?.uri}
+                  onZoomedChange={onZoomedChange}
+                />
+                {busy === 'bake' && item.uri === photo?.uri ? (
+                  <View style={styles.baking}>
+                    <ActivityIndicator color={playback.amber} />
+                    <Text style={styles.bakingText}>BAKING</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
+          />
+        ) : null}
       </View>
 
       {infoOpen && photo && !applyOpen ? (
@@ -274,7 +273,7 @@ const ImageViewerScreen: React.FC = () => {
       {applyOpen && photo && !photo.lookBaked ? (
         <View style={styles.applyPanel}>
           <Text style={styles.applyTitle}>APPLY LOOK</Text>
-          <ScrollView style={styles.presetList}>
+          <ScrollView style={{maxHeight: Math.min(220, windowHeight * 0.32)}}>
             {presets.map(preset => {
               const selected = preset.id === presetId;
               return (
@@ -483,9 +482,6 @@ const styles = StyleSheet.create({
     fontFamily: mono,
     letterSpacing: 1.5,
     marginBottom: 6,
-  },
-  presetList: {
-    maxHeight: 220,
   },
   presetRow: {
     paddingVertical: 8,

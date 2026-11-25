@@ -9,8 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
+      "requireFullScreen": true,
       "bundleIdentifier": "com.digicamsim",
       "infoPlist": {
+        "UISupportedInterfaceOrientations~ipad": ["UIInterfaceOrientationPortrait"],
         "NSCameraUsageDescription": "DigiCamSim needs access to your camera to take photos.",
         "NSPhotoLibraryUsageDescription": "DigiCamSim needs access to your photo library.",
         "NSPhotoLibraryAddUsageDescription": "DigiCamSim saves photos to your library."

@@ -1,15 +1,21 @@
 import React, {useEffect, useState} from 'react';
-import {Animated, StyleSheet, View} from 'react-native';
-import {buildFocusBracketScene, buildLcdScene} from './buildLcdScene';
+import {Animated, Pressable, StyleSheet, View} from 'react-native';
+import {
+  buildFocusBracketScene,
+  buildLcdScene,
+  lcdHeight,
+  shotCounterLayout,
+} from './buildLcdScene';
 import {formatLcdDate, formatShots} from './format';
 import {SceneSvg} from '../skins/SceneSvg';
 import {resolveLcdTheme} from './theme';
-import type {LcdOverlayProps} from './types';
+import {LCD_VIEWBOX, type LcdOverlayProps} from './types';
 
 export const LcdOverlay: React.FC<LcdOverlayProps> = ({
   width = '100%',
   height = '100%',
   theme,
+  square = false,
   batteryLevel = 0.75,
   shotsRemaining = 24,
   flashMode = 'auto',
@@ -17,6 +23,7 @@ export const LcdOverlay: React.FC<LcdOverlayProps> = ({
   focus = 'idle',
   mode = 'live',
   animated = true,
+  onOpenPlayback,
 }) => {
   const resolved = resolveLcdTheme(theme);
   const [opacity] = useState(() => new Animated.Value(1));
@@ -68,8 +75,11 @@ export const LcdOverlay: React.FC<LcdOverlayProps> = ({
   }, [animated, focus, mode, scale]);
 
   const shots = formatShots(shotsRemaining);
+  const counter = shotCounterLayout(shots, square);
+  const heightUnits = lcdHeight(square);
   const hud = buildLcdScene({
     theme: resolved,
+    square,
     batteryLevel,
     shotsRemaining,
     flashMode,
@@ -81,15 +91,19 @@ export const LcdOverlay: React.FC<LcdOverlayProps> = ({
   const brackets = buildFocusBracketScene(
     resolved,
     focus === 'locked' ? 'locked' : 'searching',
+    square,
   );
   const batteryBand = batteryLevel <= 0.2 ? 'low' : 'ok';
 
   return (
     <View
       testID="lcd-overlay"
+      pointerEvents="box-none"
       accessibilityLabel={`lcd flash-${flashMode} focus-${focus} mode-${mode} shots-${shots} battery-${batteryBand}`}
       style={[styles.frame, {width, height}]}>
-      <SceneSvg scene={hud} width="100%" height="100%" />
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <SceneSvg scene={hud} width="100%" height="100%" />
+      </View>
       {mode === 'live' ? (
         <Animated.View
           testID="lcd-focus-bracket"
@@ -103,6 +117,21 @@ export const LcdOverlay: React.FC<LcdOverlayProps> = ({
           <SceneSvg scene={brackets} width="100%" height="100%" />
         </Animated.View>
       ) : null}
+      {onOpenPlayback ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open playback. Shots remaining ${shots}`}
+          testID="lcd-shot-counter"
+          onPress={onOpenPlayback}
+          style={[
+            styles.counter,
+            {
+              width: `${(100 * (LCD_VIEWBOX.width - counter.x)) / LCD_VIEWBOX.width}%`,
+              height: `${(100 * (heightUnits - counter.y)) / heightUnits}%`,
+            },
+          ]}
+        />
+      ) : null}
     </View>
   );
 };
@@ -114,5 +143,12 @@ const styles = StyleSheet.create({
   brackets: {
     ...StyleSheet.absoluteFill,
     pointerEvents: 'none',
+  },
+  counter: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    minWidth: 44,
+    minHeight: 44,
   },
 });

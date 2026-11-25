@@ -12,7 +12,7 @@ import {
 
 type SkinHandler = Exclude<
   keyof CameraSkinProps,
-  'width' | 'height' | 'children'
+  'width' | 'height' | 'rotation' | 'children'
 >;
 
 const BUTTONS: Record<
@@ -37,7 +37,11 @@ const BUTTONS: Record<
   zoomIn: {label: 'Zoom in', testID: 'skin-zoom-in', handler: 'onZoomIn'},
   zoomOut: {label: 'Zoom out', testID: 'skin-zoom-out', handler: 'onZoomOut'},
   review: {label: 'Gallery', testID: 'skin-review', handler: 'onReview'},
-  power: {label: 'Power', testID: 'skin-power', handler: 'onPower'},
+  viewfinder: {
+    label: 'Expand viewfinder',
+    testID: 'skin-expand-viewfinder',
+    handler: 'onExpandViewfinder',
+  },
   display: {label: 'Display', testID: 'skin-display', handler: 'onDisplay'},
   func: {label: 'Function', testID: 'skin-func', handler: 'onFunc'},
   menu: {label: 'Menu', testID: 'skin-menu', handler: 'onMenu'},
@@ -48,12 +52,14 @@ type CameraBodySkinProps = CameraSkinProps & {
   skinId: string;
   layout: SkinLayout;
   scene: Scene;
+  surfaceColor: string;
 };
 
 export function CameraBodySkin({
   skinId,
   layout,
   scene,
+  surfaceColor,
   width,
   height,
   children,
@@ -61,7 +67,7 @@ export function CameraBodySkin({
 }: CameraBodySkinProps) {
   const placed = resolveSkinLayout(layout, {width, height});
   return (
-    <View testID={`skin-${skinId}`} style={{width, height}}>
+    <View testID={`skin-${skinId}`} style={{width, height, backgroundColor: surfaceColor}}>
       <View style={styles.art}>
         <SceneSvg
           scene={scene}
@@ -97,6 +103,7 @@ export function CameraBodySkin({
             accessibilityRole="button"
             accessibilityLabel={button.label}
             accessibilityHint={button.hint}
+            disabled={typeof onPress !== 'function' && typeof onLongPress !== 'function'}
             delayLongPress={420}
             onPress={typeof onPress === 'function' ? onPress : undefined}
             onLongPress={

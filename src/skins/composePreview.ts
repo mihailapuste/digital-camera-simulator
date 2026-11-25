@@ -52,6 +52,7 @@ export function composeSkinPreview(
   const overlay = place(
     buildLcdScene({
       theme: resolveLcdTheme(sample.theme),
+      square: hole.width === hole.height,
       batteryLevel: sample.batteryLevel,
       shotsRemaining: sample.shotsRemaining,
       flashMode: sample.flashMode,

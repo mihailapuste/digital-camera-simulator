@@ -1,86 +1,159 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import {listPresets} from '../look';
+import {sidewaysFrame} from './sidewaysFrame';
 
 type PresetPickerProps = {
+  visible: boolean;
+  sideways: boolean;
   selectedId: string;
   onSelect: (id: string) => void;
+  onCancel: () => void;
+  onApply: () => void;
 };
 
-/** On-LCD look list. It sits in the rotated plate, so it reads sideways. */
-export function PresetPicker({selectedId, onSelect}: PresetPickerProps) {
-  const presets = listPresets();
+export function PresetPicker({
+  visible,
+  sideways,
+  selectedId,
+  onSelect,
+  onCancel,
+  onApply,
+}: PresetPickerProps) {
+  const {width, height} = useWindowDimensions();
   return (
-    <View testID="preset-picker" style={styles.scrim} pointerEvents="box-none">
-      <View style={styles.panel}>
-        <Text style={styles.title}>FUNC</Text>
-        {presets.map(preset => {
-          const selected = preset.id === selectedId;
-          return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      supportedOrientations={['portrait', 'landscape']}
+      onRequestClose={onCancel}>
+      <View style={[styles.scrim, sideways && sidewaysFrame(width, height)]}>
+        <View accessibilityViewIsModal style={styles.panel}>
+          <Text accessibilityRole="header" style={styles.title}>
+            Camera presets
+          </Text>
+          <ScrollView
+            style={styles.list}
+            contentContainerStyle={styles.options}>
+            {listPresets().map(preset => {
+              const selected = preset.id === selectedId;
+              return (
+                <Pressable
+                  key={preset.id}
+                  testID={`preset-${preset.id}`}
+                  accessibilityRole="radio"
+                  accessibilityState={{checked: selected}}
+                  onPress={() => onSelect(preset.id)}
+                  style={[styles.row, selected && styles.selected]}>
+                  <Text style={styles.label}>{preset.name}</Text>
+                  {selected ? (
+                    <Text style={styles.check} accessible={false}>
+                      ✓
+                    </Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <View style={styles.actions}>
             <Pressable
-              key={preset.id}
-              testID={`preset-${preset.id}`}
               accessibilityRole="button"
-              accessibilityState={{selected}}
-              onPress={() => onSelect(preset.id)}
-              style={[styles.row, selected && styles.rowOn]}>
-              <Text style={[styles.name, selected && styles.nameOn]}>
-                {preset.name}
-              </Text>
+              onPress={onCancel}
+              style={styles.action}>
+              <Text style={styles.label}>Cancel</Text>
             </Pressable>
-          );
-        })}
-        <Text style={styles.hint}>SET</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onApply}
+              style={[styles.action, styles.apply]}>
+              <Text style={styles.applyLabel}>Apply</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
-    </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   scrim: {
-    ...StyleSheet.absoluteFill,
+    flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 18,
-    backgroundColor: 'rgba(6, 8, 14, 0.35)',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   panel: {
-    backgroundColor: 'rgba(10, 14, 22, 0.92)',
-    borderWidth: 2,
-    borderColor: '#F4F7FB',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '100%',
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: '#1b2028',
   },
   title: {
-    color: '#F4F7FB',
-    fontSize: 12,
-    letterSpacing: 3,
-    textAlign: 'center',
-    marginBottom: 6,
-    fontVariant: ['tabular-nums'],
+    color: '#f4f7fb',
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  list: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  options: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   row: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    marginBottom: 3,
+    width: '50%',
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  rowOn: {
-    backgroundColor: '#1B2836',
-    borderLeftWidth: 3,
-    borderLeftColor: '#FF8A14',
+  selected: {
+    backgroundColor: '#333038',
   },
-  name: {
-    color: '#D5DCE6',
-    fontSize: 15,
-    letterSpacing: 0.4,
+  label: {
+    color: '#f4f7fb',
+    fontSize: 16,
   },
-  nameOn: {
-    color: '#FFFFFF',
+  check: {
+    color: '#f5c77d',
+    fontSize: 18,
   },
-  hint: {
-    color: '#FF8A14',
-    textAlign: 'center',
-    letterSpacing: 2,
-    fontSize: 11,
-    marginTop: 4,
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  action: {
+    flex: 1,
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    backgroundColor: '#303641',
+  },
+  apply: {
+    backgroundColor: '#f5c77d',
+  },
+  applyLabel: {
+    color: '#1a140d',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });

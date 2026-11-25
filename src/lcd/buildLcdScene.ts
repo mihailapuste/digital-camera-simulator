@@ -27,6 +27,23 @@ import {
 
 export type {BuildableLcd} from './sceneOptions';
 
+const SHOT_SCALE = 4;
+
+export function lcdHeight(square = false) {
+  return square ? LCD_VIEWBOX.width : LCD_VIEWBOX.height;
+}
+
+export function shotCounterLayout(shots: string, square = false) {
+  const width = pixelTextWidth(shots, SHOT_SCALE) + 12;
+  const height = pixelTextHeight(SHOT_SCALE) + 8;
+  return {
+    x: LCD_VIEWBOX.width - 3 - width,
+    y: lcdHeight(square) - 3 - height,
+    width,
+    height,
+  };
+}
+
 const FOCUS_WINDOW = {
   idle: {x: 16, y: 92, width: 54, height: 40, stroke: 2.2},
   searching: {x: 16, y: 92, width: 54, height: 40, stroke: 2.2},
@@ -51,14 +68,15 @@ function playGlyph(
 export function buildFocusBracketScene(
   theme: LcdTheme,
   focus: 'idle' | 'searching' | 'locked',
+  square = false,
 ): Scene {
   const spec = FOCUS_WINDOW[focus];
   const color = focus === 'locked' ? theme.bracketLocked : theme.bracket;
   return {
-    viewBox: LCD_VIEWBOX,
+    viewBox: {...LCD_VIEWBOX, height: lcdHeight(square)},
     gradients: [],
     nodes: [
-      focusWindow(spec.x, spec.y, spec.width, spec.height, color, spec.stroke),
+      focusWindow(spec.x, spec.y + (lcdHeight(square) - LCD_VIEWBOX.height) / 2, spec.width, spec.height, color, spec.stroke),
     ],
   };
 }
@@ -110,19 +128,14 @@ function statusCluster(options: BuildableLcd): SceneNode[] {
 }
 
 export function buildLcdScene(options: BuildableLcd): Scene {
-  const {theme, mode} = options;
+  const {theme, mode, square} = options;
+  const height = lcdHeight(square);
   const shots = formatShots(options.shotsRemaining);
   const dateScale = 2;
-  const shotScale = 5;
-  const shotW = pixelTextWidth(shots, shotScale);
-  const shotH = pixelTextHeight(shotScale);
-  const shotBoxW = shotW + 16;
-  const shotBoxH = shotH + 12;
-  const shotBoxX = LCD_VIEWBOX.width - 8 - shotBoxW;
-  const shotBoxY = LCD_VIEWBOX.height - 8 - shotBoxH;
+  const counter = shotCounterLayout(shots, square);
   const qualityW = 96;
   const qualityH = 36;
-  const qualityY = LCD_VIEWBOX.height - 8 - qualityH;
+  const qualityY = height - 8 - qualityH;
   const nodes: SceneNode[] = [
     iconWell(8, 8, 78, 30, theme.iconWell),
     batteryIcon(14, 13, 64, 18, options.batteryLevel, {
@@ -147,15 +160,6 @@ export function buildLcdScene(options: BuildableLcd): Scene {
       3,
       theme.icon,
     ),
-    iconWell(shotBoxX, shotBoxY, shotBoxW, shotBoxH, theme.iconWell),
-    ...pixelTextBlock(
-      shots,
-      shotBoxX + 8,
-      shotBoxY + 6,
-      shotScale,
-      theme.text,
-      theme.shadow,
-    ),
   ];
 
   if (mode === 'review') {
@@ -163,12 +167,12 @@ export function buildLcdScene(options: BuildableLcd): Scene {
     const scale = 4;
     const width = label.length * 6 * scale - scale;
     nodes.unshift(
-      rect(0, 0, LCD_VIEWBOX.width, LCD_VIEWBOX.height, {
+      rect(0, 0, LCD_VIEWBOX.width, height, {
         fill: theme.reviewScrim,
       }),
     );
     nodes.push(
-      rect(10, 10, LCD_VIEWBOX.width - 20, LCD_VIEWBOX.height - 20, {
+      rect(10, 10, LCD_VIEWBOX.width - 20, height - 20, {
         fill: 'none',
         stroke: theme.reviewFrame,
         strokeWidth: 3,
@@ -177,7 +181,7 @@ export function buildLcdScene(options: BuildableLcd): Scene {
         pixelTextBlock(
           label,
           (LCD_VIEWBOX.width - width) / 2,
-          (LCD_VIEWBOX.height - pixelTextHeight(scale)) / 2,
+          (height - pixelTextHeight(scale)) / 2,
           scale,
           theme.text,
           theme.shadow,
@@ -189,9 +193,27 @@ export function buildLcdScene(options: BuildableLcd): Scene {
     const color =
       options.focus === 'locked' ? theme.bracketLocked : theme.bracket;
     nodes.push(
-      focusWindow(spec.x, spec.y, spec.width, spec.height, color, spec.stroke),
+      focusWindow(spec.x, spec.y + (height - LCD_VIEWBOX.height) / 2, spec.width, spec.height, color, spec.stroke),
     );
   }
 
-  return {viewBox: LCD_VIEWBOX, gradients: [], nodes};
+  nodes.push(
+    iconWell(
+      counter.x,
+      counter.y,
+      counter.width,
+      counter.height,
+      theme.iconWell,
+    ),
+    ...pixelTextBlock(
+      shots,
+      counter.x + 6,
+      counter.y + 4,
+      SHOT_SCALE,
+      theme.text,
+      theme.shadow,
+    ),
+  );
+
+  return {viewBox: {...LCD_VIEWBOX, height}, gradients: [], nodes};
 }

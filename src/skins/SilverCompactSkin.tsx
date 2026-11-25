@@ -7,11 +7,18 @@ import {
 } from './silverCompact';
 import type {CameraSkinProps} from './types';
 
-export const SilverCompactSkin: React.FC<CameraSkinProps> = props => (
+export const SilverCompactSkin: React.FC<CameraSkinProps> = ({
+  rotation,
+  ...props
+}) => (
   <CameraBodySkin
     {...props}
     skinId={silverCompactMeta.id}
-    layout={silverCompactLayout}
+    layout={{
+      ...silverCompactLayout,
+      rotation: rotation ?? silverCompactLayout.rotation,
+    }}
     scene={silverCompactScene}
+    surfaceColor="#D4CDC0"
   />
 );

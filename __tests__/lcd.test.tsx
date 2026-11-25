@@ -170,3 +170,20 @@ test('the overlay renders live, locked, and review states', async () => {
     expect(brackets.length > 0).toBe(item.bracket === 1);
   }
 });
+
+test('the LCD frame counter opens playback when pressed', async () => {
+  const openPlayback = jest.fn();
+  let renderer: ReactTestRenderer.ReactTestRenderer;
+  await ReactTestRenderer.act(() => {
+    renderer = ReactTestRenderer.create(
+      <LcdOverlay shotsRemaining={67} onOpenPlayback={openPlayback} />,
+    );
+  });
+
+  const counter = renderer!.root.findByProps({testID: 'lcd-shot-counter'});
+  expect(counter.props.accessibilityLabel).toBe(
+    'Open playback. Shots remaining 67',
+  );
+  counter.props.onPress();
+  expect(openPlayback).toHaveBeenCalledTimes(1);
+});

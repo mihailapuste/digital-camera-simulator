@@ -167,8 +167,8 @@ export function layoutIssues(layout: SkinLayout): string[] {
     issues.push('shutter is too small');
   }
   const ratio = layout.lcd.width / layout.lcd.height;
-  if (Math.abs(ratio - 4 / 3) > 0.02) {
-    issues.push('lcd is not 4:3');
+  if (Math.abs(ratio - 1) > 0.02) {
+    issues.push('lcd is not square');
   }
   if ((layout.lcd.width * layout.lcd.height) / (width * height) < 0.12) {
     issues.push('lcd covers less than 12% of the skin');
