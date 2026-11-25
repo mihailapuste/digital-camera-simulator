@@ -13,10 +13,13 @@ import {
   resolveSkinLayout,
   sceneToSvg,
   silverCompactCutout,
+  silverCompactLabels,
   silverCompactLayout,
   silverCompactScene,
   skinAspectRatio,
 } from '../src/skins';
+import {SKIN_CONTROLS} from '../src/skins/types';
+import {pixelTextWidth} from '../src/lcd/pixelFont';
 import {sceneIssues} from '../src/skins/sceneModel';
 import {roundedRectPath} from '../src/skins/shapes';
 
@@ -41,7 +44,7 @@ test('layout rects sit on the body and describe a large 4:3 cutout', () => {
   expect(lcd.width / lcd.height).toBeCloseTo(4 / 3, 2);
   expect(
     (lcd.width * lcd.height) / (viewBox.width * viewBox.height),
-  ).toBeGreaterThan(0.25);
+  ).toBeGreaterThan(0.2);
 });
 
 test('physical controls map onto the matching parts of the body', () => {
@@ -74,7 +77,7 @@ test('resolveSkinLayout turns the landscape back onto a portrait phone', () => {
   expect(fitted.scale).toBe(1);
   expect(fitted.offsetX).toBe(0);
   expect(fitted.frame).toEqual({left: 0, top: 0, width: 360, height: 780});
-  expect(fitted.lcd).toEqual({left: 58, top: 150, width: 234, height: 312});
+  expect(fitted.lcd).toEqual({left: 80, top: 150, width: 210, height: 280});
   expect(fitted.lcd.height / fitted.lcd.width).toBeCloseTo(4 / 3, 2);
   expect(fitted.controls.set.left + fitted.controls.set.width).toBeLessThanOrEqual(
     fitted.lcd.left + 1,
@@ -91,9 +94,9 @@ test('resolveSkinLayout turns the landscape back onto a portrait phone', () => {
     height: 390,
   });
   expect(half.scale).toBeCloseTo(0.5);
-  expect(half.lcd.left).toBeCloseTo(29);
-  expect(half.lcd.width).toBeCloseTo(117);
-  expect(half.lcd.height).toBeCloseTo(156);
+  expect(half.lcd.left).toBeCloseTo(40);
+  expect(half.lcd.width).toBeCloseTo(105);
+  expect(half.lcd.height).toBeCloseTo(140);
 
   const tall = resolveSkinLayout(silverCompactLayout, {
     width: 360,
@@ -107,8 +110,80 @@ test('resolveSkinLayout turns the landscape back onto a portrait phone', () => {
     height: 780,
   });
   expect(wide.offsetX).toBeCloseTo(220);
-  expect(wide.lcd.left).toBeCloseTo(278);
+  expect(wide.lcd.left).toBeCloseTo(300);
   expect(wide.frame.width).toBeCloseTo(360);
+});
+
+function rectsOverlap(
+  a: {x: number; y: number; width: number; height: number},
+  b: {x: number; y: number; width: number; height: number},
+): boolean {
+  return (
+    a.x + a.width > b.x + 0.5 &&
+    b.x + b.width > a.x + 0.5 &&
+    a.y + a.height > b.y + 0.5 &&
+    b.y + b.height > a.y + 0.5
+  );
+}
+
+test('engraved labels use the pixel font and sit clear of the buttons', () => {
+  const glyph = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-';
+  const labels = Object.values(silverCompactLabels);
+  for (const label of labels) {
+    expect(pixelTextWidth(label.text, 2)).toBeLessThanOrEqual(label.width + 0.01);
+    expect([...label.text].every(character => glyph.includes(character))).toBe(
+      true,
+    );
+    expect(label.x).toBeGreaterThanOrEqual(8);
+    expect(label.y).toBeGreaterThanOrEqual(8);
+    expect(label.x + label.width).toBeLessThanOrEqual(772);
+    expect(label.y + label.height).toBeLessThanOrEqual(354);
+    expect(rectsOverlap(label, silverCompactLayout.lcd)).toBe(false);
+    for (const id of SKIN_CONTROLS) {
+      expect(rectsOverlap(label, silverCompactLayout.controls[id])).toBe(false);
+    }
+  }
+  expect(silverCompactLabels.dcIn.x + silverCompactLabels.dcIn.width).toBeLessThan(
+    silverCompactLabels.set.x,
+  );
+  expect(silverCompactLabels.set.x).toBeLessThan(silverCompactLabels.menu.x);
+  expect(silverCompactLabels.func.x + silverCompactLabels.func.width).toBeLessThan(
+    silverCompactLayout.controls.func.x,
+  );
+  expect(silverCompactLabels.disp.x + silverCompactLabels.disp.width).toBeLessThan(
+    silverCompactLayout.controls.display.x,
+  );
+});
+
+test('the body stays inside the frame on small and tall phones', () => {
+  const phones = [
+    {width: 320, height: 568},
+    {width: 375, height: 667},
+    {width: 360, height: 640},
+    {width: 360, height: 800},
+    {width: 390, height: 844},
+    {width: 430, height: 932},
+  ];
+  for (const phone of phones) {
+    const fitted = resolveSkinLayout(silverCompactLayout, phone);
+    expect(fitted.frame.left).toBeGreaterThanOrEqual(-0.01);
+    expect(fitted.frame.top).toBeGreaterThanOrEqual(-0.01);
+    expect(fitted.frame.left + fitted.frame.width).toBeLessThanOrEqual(phone.width + 0.01);
+    expect(fitted.frame.top + fitted.frame.height).toBeLessThanOrEqual(
+      phone.height + 0.01,
+    );
+    for (const id of SKIN_CONTROLS) {
+      const hit = fitted.controls[id];
+      expect(hit.left).toBeGreaterThanOrEqual(fitted.frame.left - 0.01);
+      expect(hit.top).toBeGreaterThanOrEqual(fitted.frame.top - 0.01);
+      expect(hit.left + hit.width).toBeLessThanOrEqual(
+        fitted.frame.left + fitted.frame.width + 0.01,
+      );
+      expect(hit.top + hit.height).toBeLessThanOrEqual(
+        fitted.frame.top + fitted.frame.height + 0.01,
+      );
+    }
+  }
 });
 
 test('skin svg snapshot', () => {
@@ -140,10 +215,10 @@ test('buttons call their handlers and the lcd slot is positioned', async () => {
   const slot = renderer!.root.findByProps({testID: 'skin-lcd-slot'});
   const slotStyle = StyleSheet.flatten(slot.props.style);
   expect(slotStyle).toMatchObject({
-    left: 58,
+    left: 80,
     top: 150,
-    width: 234,
-    height: 312,
+    width: 210,
+    height: 280,
   });
   expect(renderer!.root.findByProps({testID: 'lcd-child'})).toBeTruthy();
 
@@ -204,8 +279,8 @@ test('SkinStage nests the preview and themed overlay in the cutout', async () =>
   });
   const turned = renderer!.root.findByProps({testID: 'skin-lcd-rotation'});
   const turnedStyle = StyleSheet.flatten(turned.props.style);
-  expect(turnedStyle.width).toBe(312);
-  expect(turnedStyle.height).toBe(234);
+  expect(turnedStyle.width).toBe(280);
+  expect(turnedStyle.height).toBe(210);
   expect(turnedStyle.transform).toEqual([{rotate: '90deg'}]);
   expect(renderer!.root.findByProps({testID: 'live-preview'})).toBeTruthy();
   const overlay = renderer!.root.findByProps({testID: 'lcd-overlay'});

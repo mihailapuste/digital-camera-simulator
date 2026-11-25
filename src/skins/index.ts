@@ -22,6 +22,7 @@ export {
 export {sceneToSvg} from './sceneToSvg';
 export {
   silverCompactCutout,
+  silverCompactLabels,
   silverCompactLayout,
   silverCompactMeta,
   silverCompactScene,

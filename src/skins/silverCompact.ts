@@ -1,5 +1,5 @@
 import {boltNode} from '../lcd/icons';
-import {centeredPixelText} from '../lcd/pixelFont';
+import {centeredPixelText, pixelTextNodes, pixelTextWidth} from '../lcd/pixelFont';
 import {
   circle,
   ellipse,
@@ -38,21 +38,34 @@ export const silverCompactMeta = {
 export const silverCompactLayout: SkinLayout = {
   viewBox: {width: 780, height: 360},
   rotation: 90,
-  lcd: {x: 150, y: 68, width: 312, height: 234},
+  lcd: {x: 150, y: 70, width: 280, height: 210},
   controls: {
     shutter: {x: 474, y: 8, width: 108, height: 108},
     zoomOut: {x: 656, y: 14, width: 56, height: 46},
     zoomIn: {x: 716, y: 14, width: 56, height: 46},
-    power: {x: 392, y: 12, width: 48, height: 48},
-    set: {x: 164, y: 306, width: 78, height: 46},
-    menu: {x: 252, y: 306, width: 96, height: 46},
+    power: {x: 348, y: 8, width: 44, height: 44},
+    set: {x: 168, y: 286, width: 62, height: 46},
+    menu: {x: 252, y: 286, width: 84, height: 46},
     mode: {x: 586, y: 62, width: 64, height: 46},
     review: {x: 586, y: 10, width: 64, height: 46},
-    flash: {x: 504, y: 172, width: 52, height: 56},
-    func: {x: 676, y: 228, width: 58, height: 50},
-    display: {x: 676, y: 292, width: 58, height: 50},
+    flash: {x: 456, y: 168, width: 56, height: 56},
+    func: {x: 712, y: 196, width: 56, height: 48},
+    display: {x: 712, y: 258, width: 56, height: 48},
   },
 };
+
+/**
+ * Engraved words, in landscape pixels. Text uses only the 5×7 pixel font
+ * (no system-font fallback). The SET key icon is drawn beside the word.
+ * Every box sits on the metal and clear of the buttons.
+ */
+export const silverCompactLabels = {
+  dcIn: {text: 'DC IN', x: 100, y: 338, width: pixelTextWidth('DC IN', 2), height: 14},
+  set: {text: 'SET', x: 174, y: 338, width: pixelTextWidth('SET', 2), height: 14},
+  menu: {text: 'MENU', x: 271, y: 338, width: pixelTextWidth('MENU', 2), height: 14},
+  func: {text: 'FUNC.', x: 648, y: 213, width: pixelTextWidth('FUNC.', 2), height: 14},
+  disp: {text: 'DISP.', x: 648, y: 275, width: pixelTextWidth('DISP.', 2), height: 14},
+} as const;
 
 export const silverCompactCutout: RoundBox = {
   ...silverCompactLayout.lcd,
@@ -64,8 +77,8 @@ const ENGRAVED = '#5C5852';
 const BLUE = '#2F74B8';
 const RED = '#D64545';
 
-const shell: RoundBox = {x: 8, y: 6, width: 764, height: 348, radius: 28};
-const face: RoundBox = {x: 16, y: 12, width: 748, height: 336, radius: 24};
+const shell: RoundBox = {x: 8, y: 6, width: 764, height: 350, radius: 28};
+const face: RoundBox = {x: 16, y: 12, width: 748, height: 342, radius: 24};
 
 const gradients: SceneGradient[] = [
   {
@@ -350,6 +363,31 @@ function tulip(cx: number, cy: number, color: string): SceneNode {
   ]);
 }
 
+/** Squared plus drawn as vectors. A unicode ⊞ would fall back to a CJK font. */
+function setMark(x: number, y: number, size: number, color: string): SceneNode {
+  return group([
+    rect(x, y, size, size, {
+      fill: 'none',
+      stroke: color,
+      strokeWidth: 1.3,
+    }),
+    line(x + size * 0.5, y + size * 0.22, x + size * 0.5, y + size * 0.78, {
+      stroke: color,
+      strokeWidth: 1.3,
+      strokeLinecap: 'round',
+    }),
+    line(x + size * 0.22, y + size * 0.5, x + size * 0.78, y + size * 0.5, {
+      stroke: color,
+      strokeWidth: 1.3,
+      strokeLinecap: 'round',
+    }),
+  ]);
+}
+
+function engraved(text: string, x: number, y: number, color: string): SceneNode {
+  return group(pixelTextNodes(text, x, y, 2, color));
+}
+
 function printerGlyph(x: number, y: number, color: string): SceneNode {
   return group([
     rect(x + 4, y, 10, 5, {
@@ -439,9 +477,9 @@ function buildSilverCompactScene(): Scene {
       bezelRing(silverCompactCutout, 7, '#23272B'),
       bezelRing(silverCompactCutout, 3, '#5E656C'),
       bezelRing(silverCompactCutout, 1, '#C5CCD2'),
-      viewfinder(300, 36),
-      led(338, 26, '#3FAE67'),
-      led(356, 42, '#E0A24A'),
+      viewfinder(290, 28),
+      led(328, 20, '#3FAE67'),
+      led(346, 36, '#E0A24A'),
       roundKey(
         power.x + power.width / 2,
         power.y + power.height / 2,
@@ -466,9 +504,18 @@ function buildSilverCompactScene(): Scene {
         2,
         INK,
       ),
-      centeredPixelText('DC IN', {x: 78, y: 314, width: 70, height: 16}, 2, ENGRAVED),
-      centeredPixelText('SET', {x: 118, y: 318, width: 42, height: 16}, 2, ENGRAVED),
-      centeredPixelText('MENU', {x: 206, y: 318, width: 44, height: 16}, 2, ENGRAVED),
+      rect(94, 330, 72, 24, {
+        rx: 4,
+        fill: '#B7B1A4',
+        stroke: '#6E6A62',
+        strokeWidth: 0.8,
+      }),
+      rect(100, 336, 60, 4, {rx: 1, fill: '#8A8478'}),
+      engraved(silverCompactLabels.dcIn.text, silverCompactLabels.dcIn.x, silverCompactLabels.dcIn.y, ENGRAVED),
+      engraved(silverCompactLabels.set.text, silverCompactLabels.set.x, silverCompactLabels.set.y, ENGRAVED),
+      circle(214, 345, 1.2, {fill: ENGRAVED}),
+      setMark(220, 339, 12, ENGRAVED),
+      engraved(silverCompactLabels.menu.text, silverCompactLabels.menu.x, silverCompactLabels.menu.y, ENGRAVED),
       pillKey(controls.set.x, controls.set.y, controls.set.width, controls.set.height),
       pillKey(
         controls.menu.x,
@@ -485,13 +532,21 @@ function buildSilverCompactScene(): Scene {
       }),
       cameraGlyph(604, 78, RED),
       playGlyph(618, 34, BLUE),
-      dPad(588, 200),
-      centeredPixelText('FUNC.', {x: 642, y: 240, width: 32, height: 28}, 2, BLUE),
-      centeredPixelText('DISP.', {x: 642, y: 302, width: 32, height: 28}, 2, BLUE),
-      roundKey(705, 253, 22),
-      roundKey(705, 317, 22),
-      printerGlyph(688, 176, BLUE),
-      roundKey(730, 192, 16),
+      dPad(524, 196),
+      engraved(silverCompactLabels.func.text, silverCompactLabels.func.x, silverCompactLabels.func.y, BLUE),
+      engraved(silverCompactLabels.disp.text, silverCompactLabels.disp.x, silverCompactLabels.disp.y, BLUE),
+      roundKey(
+        controls.func.x + controls.func.width / 2,
+        controls.func.y + controls.func.height / 2,
+        20,
+      ),
+      roundKey(
+        controls.display.x + controls.display.width / 2,
+        controls.display.y + controls.display.height / 2,
+        20,
+      ),
+      printerGlyph(656, 132, BLUE),
+      roundKey(740, 150, 16),
       holeGrid(704, 78, 4, 3, 8),
       centeredPixelText('LUMEN', {x: 36, y: 168, width: 70, height: 16}, 2, ENGRAVED),
       centeredPixelText('L-80', {x: 44, y: 186, width: 54, height: 14}, 2, '#8A8478'),
