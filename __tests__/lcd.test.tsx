@@ -27,6 +27,7 @@ test('formats the period date and the frame counter', () => {
 test('themes recolor the overlay and partial themes override one token', () => {
   const custom = resolveLcdTheme({text: '#123456'});
   expect(custom.text).toBe('#123456');
+  expect(custom.iconWell).toBe(resolveLcdTheme('classic').iconWell);
   expect(custom.bracketLocked).toBe(resolveLcdTheme('classic').bracketLocked);
   const amber = sceneToSvg(
     buildLcdScene({
@@ -73,6 +74,23 @@ test('lcd state snapshots', () => {
       }),
     ),
   ).toMatchSnapshot();
+});
+
+test('classic hud is white glyphs on dark wells, like the compact lcd', () => {
+  const theme = resolveLcdTheme('classic');
+  const svg = sceneToSvg(
+    buildLcdScene({
+      ...base,
+      theme,
+      flashMode: 'auto',
+      showBrackets: true,
+    }),
+  );
+  expect(theme.icon).toBe('#F4F7FB');
+  expect(theme.iconWell).toBe('#121722');
+  expect(svg).toContain(theme.iconWell);
+  expect(svg).toContain(theme.icon);
+  expect(svg).toContain(theme.bracket);
 });
 
 test('locked brackets are green and review replaces them with a frame', () => {

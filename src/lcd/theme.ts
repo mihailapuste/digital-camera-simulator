@@ -2,16 +2,17 @@ import type {LcdTheme, LcdThemeName} from './types';
 
 export const lcdThemes: Record<LcdThemeName, LcdTheme> = {
   classic: {
-    text: '#F3F6EE',
-    shadow: 'rgba(0,0,0,0.7)',
-    bracket: '#F3F6EE',
+    text: '#F4F7FB',
+    shadow: 'rgba(0,0,0,0.65)',
+    bracket: '#F4F7FB',
     bracketLocked: '#3DFF6E',
-    reviewScrim: 'rgba(0,0,0,0.42)',
-    reviewFrame: '#F3F6EE',
-    battery: '#F3F6EE',
+    reviewScrim: 'rgba(8,10,18,0.5)',
+    reviewFrame: '#F4F7FB',
+    battery: '#F4F7FB',
     batteryLow: '#FF5A4A',
-    icon: '#F3F6EE',
-    redEye: '#FF3B3B',
+    icon: '#F4F7FB',
+    redEye: '#FF4B4B',
+    iconWell: '#121722',
   },
   amber: {
     text: '#FFD27A',
@@ -24,6 +25,7 @@ export const lcdThemes: Record<LcdThemeName, LcdTheme> = {
     batteryLow: '#FF5A4A',
     icon: '#FFD27A',
     redEye: '#FF4D3A',
+    iconWell: '#241408',
   },
   ice: {
     text: '#C9F6FF',
@@ -36,6 +38,7 @@ export const lcdThemes: Record<LcdThemeName, LcdTheme> = {
     batteryLow: '#FF6B6B',
     icon: '#C9F6FF',
     redEye: '#FF4D6A',
+    iconWell: '#07141C',
   },
 };
 

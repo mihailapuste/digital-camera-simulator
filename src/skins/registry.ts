@@ -1,30 +1,16 @@
-import {CoolpixBlueSkin} from './CoolpixBlueSkin';
-import {CyberBlackSkin} from './CyberBlackSkin';
-import {IxySilverSkin} from './IxySilverSkin';
-import {coolpixBlueLayout, coolpixBlueMeta} from './coolpixBlue';
-import {cyberBlackLayout, cyberBlackMeta} from './cyberBlack';
-import {ixySilverLayout, ixySilverMeta} from './ixySilver';
+import {SilverCompactSkin} from './SilverCompactSkin';
+import {silverCompactLayout, silverCompactMeta} from './silverCompact';
 import type {SkinDefinition} from './types';
 
 export const skinList: readonly SkinDefinition[] = [
   {
-    ...ixySilverMeta,
-    layout: ixySilverLayout,
-    Component: IxySilverSkin,
-  },
-  {
-    ...cyberBlackMeta,
-    layout: cyberBlackLayout,
-    Component: CyberBlackSkin,
-  },
-  {
-    ...coolpixBlueMeta,
-    layout: coolpixBlueLayout,
-    Component: CoolpixBlueSkin,
+    ...silverCompactMeta,
+    layout: silverCompactLayout,
+    Component: SilverCompactSkin,
   },
 ];
 
-export const defaultSkinId = ixySilverMeta.id;
+export const defaultSkinId = silverCompactMeta.id;
 
 export function listSkins(): readonly SkinDefinition[] {
   return skinList;

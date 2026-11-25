@@ -17,6 +17,8 @@ export type LcdTheme = {
   batteryLow: string;
   icon: string;
   redEye: string;
+  /** Dark plate behind white status glyphs. */
+  iconWell: string;
 };
 
 export type LcdOverlayProps = {

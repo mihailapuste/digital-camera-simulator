@@ -70,7 +70,7 @@ export function composeSkinPreview(
       ...overlay.scene.gradients,
     ],
     nodes: [
-      rect(0, 0, body.viewBox.width, body.viewBox.height, {fill: '#121418'}),
+      rect(0, 0, body.viewBox.width, body.viewBox.height, {fill: '#E6E1D6'}),
       backdrop.node,
       ...skinned.nodes,
       overlay.node,

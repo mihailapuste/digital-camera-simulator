@@ -34,8 +34,8 @@ export function buildViewfinderBackdrop(): Scene {
       rect(0, 0, width, height, {fill: 'url(#sky)'}),
       circle(width * 0.78, height * 0.22, 26, {fill: '#FFF3C4'}),
       circle(width * 0.78, height * 0.22, 40, {fill: '#FFF3C4', opacity: 0.35}),
-      ellipse(width * 0.28, height * 0.7, 150, 48, {fill: '#7EAA58'}),
-      ellipse(width * 0.72, height * 0.74, 160, 52, {fill: '#4E7A38'}),
+      ellipse(width * 0.3, height * 0.74, 108, 42, {fill: '#7EAA58'}),
+      ellipse(width * 0.7, height * 0.78, 100, 40, {fill: '#4E7A38'}),
       rect(0, height * 0.72, width, height * 0.28, {fill: '#3E6B34'}),
       rect(width * 0.18, height * 0.58, 8, 48, {fill: '#6A4328'}),
       polygon(
