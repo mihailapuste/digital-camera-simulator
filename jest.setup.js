@@ -57,6 +57,31 @@ jest.mock('@shopify/react-native-skia', () => {
   };
 });
 
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn(async () => true),
+  shareAsync: jest.fn(async () => undefined),
+}));
+
+jest.mock('react-native-reanimated', () => {
+  const {Image, Text, View} = require('react-native');
+  const Animated = {
+    View,
+    Text,
+    Image,
+    createAnimatedComponent: component => component,
+    call: () => {},
+  };
+  return {
+    __esModule: true,
+    default: Animated,
+    useSharedValue: initial => ({value: initial}),
+    useAnimatedStyle: updater => updater(),
+    withTiming: toValue => toValue,
+    runOnJS: fn => fn,
+    Easing: {linear: t => t},
+  };
+});
+
 jest.mock('./src/services/photoLibrary', () => ({
   listPhotos: jest.fn(async () => []),
   importFile: jest.fn(async () => ({
@@ -69,8 +94,17 @@ jest.mock('./src/services/photoLibrary', () => ({
     name: 'DigiCamSim_1.jpg',
     modifiedAt: 0,
   })),
-  writeBase64: jest.fn(async () => 'file:///filtered.png'),
   deletePhoto: jest.fn(async () => {}),
+  replacePhoto: jest.fn(async uri => ({
+    uri,
+    name: 'DigiCamSim_1.jpg',
+    modifiedAt: 0,
+  })),
   saveToDeviceLibrary: jest.fn(async () => 'asset'),
+  savePhotosToAlbum: jest.fn(async () => ({
+    ok: true,
+    assetIds: ['asset'],
+    channel: 'album',
+  })),
 }));
 

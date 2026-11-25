@@ -19,7 +19,9 @@
     "android": {
       "package": "com.digicamsim",
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.CAMERA"],
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#1A1A1A",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -42,9 +44,12 @@
           "photosPermission": "DigiCamSim needs access to your photo library.",
           "savePhotosPermission": "DigiCamSim saves photos to your library.",
           "isAccessMediaLocationEnabled": false,
-          "granularPermissions": ["photo"]
+          "granularPermissions": [
+            "photo"
+          ]
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }
