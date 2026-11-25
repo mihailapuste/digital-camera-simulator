@@ -111,6 +111,12 @@ test.each([
       0,
     );
     expect(covered).toBeCloseTo(viewport.width * viewport.height);
+    if (rotation === 90) {
+      const bezelDepth = silverCompactLayout.lcd.x - silverCompactLayout.lcdBezel!.x;
+      const bezelTop = fitted.lcd.top -
+        bezelDepth * (fitted.lcd.height / silverCompactLayout.lcd.width);
+      expect(bezelTop).toBeGreaterThanOrEqual(safeArea.top + 5);
+    }
     const axis = rotation === 90 ? 'top' : 'left';
     expect(fitted.controls.zoomOut[axis]).toBeLessThan(
       fitted.controls.zoomIn[axis],

@@ -7,6 +7,8 @@ import {
 } from './types';
 import type {EdgeInsets} from 'react-native-safe-area-context';
 
+const STATUS_BAR_CLEARANCE = 6;
+
 function drawnSize(layout: SkinLayout): {width: number; height: number} {
   if (layout.rotation === 90) {
     return {width: layout.viewBox.height, height: layout.viewBox.width};
@@ -123,13 +125,16 @@ function resolveFullBleed(
     insets.left,
     insets.right,
   );
+  const bezel = layout.lcdBezel && mapRect(layout, layout.lcdBezel, 1, 0, 0);
+  const topInset =
+    insets.top > 0 && bezel ? insets.top + STATUS_BAR_CLEARANCE : insets.top;
   const vertical = fitAxis(
     bleed.top,
     bleed.height,
-    Math.min(...sourceRects.map(rect => rect.top)),
+    Math.min(bezel?.top ?? Infinity, ...sourceRects.map(rect => rect.top)),
     Math.max(...sourceRects.map(rect => rect.top + rect.height)),
     height,
-    insets.top,
+    topInset,
     insets.bottom,
   );
   const centerX = horizontal.content;

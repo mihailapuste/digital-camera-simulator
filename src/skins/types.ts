@@ -39,6 +39,8 @@ export type SkinLayout = {
    */
   rotation?: SkinRotation;
   lcd: DesignRect;
+  /** Outer artwork around the LCD, used to clear the top status bar. */
+  lcdBezel?: DesignRect;
   lcdRadius?: number;
   controls: Record<SkinControlId, DesignRect>;
 };

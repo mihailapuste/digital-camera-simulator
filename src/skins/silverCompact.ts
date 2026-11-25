@@ -13,6 +13,7 @@ export const silverCompactLayout: SkinLayout = {
   bleed: {x: 48, y: 48, width: 1206, height: 642},
   rotation: 90,
   lcd: {x: 104, y: 139, width: 678, height: 505},
+  lcdBezel: {x: 64, y: 96, width: 758, height: 588},
   lcdRadius: 5,
   controls: {
     shutter: {x: 1085, y: 98, width: 155, height: 155},

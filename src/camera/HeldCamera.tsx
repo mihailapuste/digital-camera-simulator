@@ -213,7 +213,7 @@ export const HeldCamera = observer(function HeldCamera({
 
   return (
     <View style={styles.root}>
-      {focused ? <StatusBar hidden /> : null}
+      {focused ? <StatusBar style="dark" hidden={expanded} /> : null}
       {expanded ? (
         <View testID="expanded-viewfinder" style={styles.stage}>
           <View
