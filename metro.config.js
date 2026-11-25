@@ -1,11 +1,23 @@
-const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+const {getDefaultConfig} = require('expo/metro-config');
+const fs = require('fs');
+const path = require('path');
 
-/**
- * Metro configuration
- * https://reactnative.dev/docs/metro
- *
- * @type {import('@react-native/metro-config').MetroConfig}
- */
-const config = {};
+const config = getDefaultConfig(__dirname);
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+const localConfigPath = path.join(__dirname, 'src/config/local.ts');
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  const origin = context.originModulePath
+    ? context.originModulePath.split(path.sep).join('/')
+    : '';
+  if (
+    (moduleName === './override' || moduleName === './override.ts') &&
+    origin.endsWith('/src/config/index.ts') &&
+    fs.existsSync(localConfigPath)
+  ) {
+    return context.resolveRequest(context, localConfigPath, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
+module.exports = config;

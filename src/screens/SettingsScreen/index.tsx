@@ -109,11 +109,13 @@ const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.crashButton}
-          onPress={() => testCrashJs()}>
-          <Text style={styles.crashButtonText}>Test Crash</Text>
-        </TouchableOpacity>
+        {__DEV__ ? (
+          <TouchableOpacity
+            style={styles.crashButton}
+            onPress={() => testCrashJs()}>
+            <Text style={styles.crashButtonText}>Test Crash</Text>
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -197,7 +199,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'center',
     width: 200,
-
   },
   crashButtonText: {
     color: 'red',

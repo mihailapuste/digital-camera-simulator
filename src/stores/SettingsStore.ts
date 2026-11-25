@@ -29,4 +29,4 @@ export const SettingsStore = types
     },
   }));
 
-export interface ISettingsStore extends Instance<typeof SettingsStore> {}
+export type ISettingsStore = Instance<typeof SettingsStore>;

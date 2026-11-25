@@ -1,8 +1,7 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {
   View,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   Text,
   StatusBar,
@@ -13,12 +12,10 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
 import {useStores} from '@stores/index';
-import {FlashList} from '@shopify/flash-list';
+import {FlashList, FlashListRef} from '@shopify/flash-list';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import ImageView from './components/ImageView';
-
-const {width} = Dimensions.get('window');
 
 type ImageViewerScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -31,7 +28,7 @@ const ImageViewerScreen: React.FC = () => {
   const navigation = useNavigation<ImageViewerScreenNavigationProp>();
   const route = useRoute<ImageViewerScreenRouteProp>();
   const {cameraStore} = useStores();
-  const flatListRef = useRef<FlashList<string>>(null);
+  const flatListRef = useRef<FlashListRef<string>>(null);
 
   const insets = useSafeAreaInsets();
 
@@ -47,19 +44,21 @@ const ImageViewerScreen: React.FC = () => {
     }
   }, [initialIndex, flatListRef]);
 
-  const handleViewableItemsChanged = useRef(({viewableItems}: any) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index);
-    }
-  }).current;
+  const handleViewableItemsChanged = useCallback(
+    ({viewableItems}: {viewableItems: {index: number | null}[]}) => {
+      const index = viewableItems[0]?.index;
+      if (index != null) {
+        setCurrentIndex(index);
+      }
+    },
+    [],
+  );
 
   const viewabilityConfig = {
     itemVisiblePercentThreshold: 50,
   };
 
-  const renderItem = ({item}: {item: string}) => (
-    <ImageView uri={`file://${item}`} />
-  );
+  const renderItem = ({item}: {item: string}) => <ImageView uri={item} />;
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -86,7 +85,6 @@ const ImageViewerScreen: React.FC = () => {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           initialScrollIndex={initialIndex}
-          estimatedItemSize={width}
           onViewableItemsChanged={handleViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
           contentContainerStyle={{

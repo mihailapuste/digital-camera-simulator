@@ -16,12 +16,11 @@ const blackAndWhiteShader = Skia.RuntimeEffect.Make(`
   }
 `);
 
-if (!blackAndWhiteShader) {
-  throw new Error("Couldn't compile the shader");
-}
-
-// Create the shader builder
-const shaderBuilder = Skia.RuntimeShaderBuilder(blackAndWhiteShader);
+// Compiled lazily so importing this module does not crash when Skia
+// (or CanvasKit on web) is not ready yet.
+const shaderBuilder = blackAndWhiteShader
+  ? Skia.RuntimeShaderBuilder(blackAndWhiteShader)
+  : null;
 
 // Create a grayscale matrix for black and white effect
 export function createGrayscaleColorMatrix() {

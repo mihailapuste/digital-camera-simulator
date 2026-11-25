@@ -1,46 +1,40 @@
 import {config} from '../config';
-import * as Toadly from 'react-native-toadly';
 
 let hasBeenSetup = false;
 
+/**
+ * react-native-toadly is not an Expo module and is not part of this build.
+ * Setup is a no-op when credentials are missing so a fresh clone still boots.
+ * When credentials are present we only record that, and do not call native code.
+ */
 export const SetupToadly = (): void => {
-    if(!config.github.token || !config.github.repoOwner || !config.github.repoName) {
-        throw new Error('Toadly configuration is not set up correctly');
-    }
+  if (
+    !config.github.token ||
+    !config.github.repoOwner ||
+    !config.github.repoName
+  ) {
+    return;
+  }
 
-    if (hasBeenSetup) {
-        return;
-    }
+  if (hasBeenSetup) {
+    return;
+  }
 
-    hasBeenSetup = true;
-
-    try {
-    Toadly.setup(
-        config.github.token,
-        config.github.repoOwner,
-        config.github.repoName,
-    );
-
-    Toadly.enableAutomaticIssueSubmission();
-    Toadly.startNetworkMonitoring();
-
-    } catch (error) {
-        console.error('Failed to setup Toadly:', error);
-    }
+  hasBeenSetup = true;
+  console.info(
+    'GitHub credentials are set, but the native Toadly reporter is not bundled in this Expo build.',
+  );
 };
 
 export const testCrashJs = () => {
-    throw new Error('Test crash');
+  throw new Error('Test crash');
 };
 
 export const showToadlyReportDialog = () => {
-    if (!hasBeenSetup) {
-        throw new Error('Toadly has not been setup');
-    }
+  if (!hasBeenSetup) {
+    console.info('Bug reports are unavailable until a reporter is configured.');
+    return;
+  }
 
-    try {
-        Toadly.show();
-    } catch (error) {
-        console.error('Failed to show Toadly report dialog:', error);
-    }
+  console.info('Bug reports are not available in this build.');
 };

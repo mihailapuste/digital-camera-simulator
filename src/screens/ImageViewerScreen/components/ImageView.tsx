@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Text,
+  Platform,
 } from 'react-native';
 import {
   Canvas,
@@ -26,14 +27,14 @@ import {
   ImageShader,
   useCanvasRef,
 } from '@shopify/react-native-skia';
-import * as RNFS from 'react-native-fs';
 import {observer} from 'mobx-react-lite';
 import {useStores} from '@/stores';
+import {writeBase64} from '@/services/photoLibrary';
 
 const {width, height} = Dimensions.get('window');
 
 // Pixelation shader
-const pixelateShader = Skia.RuntimeEffect.Make(`
+const pixelateSource = Skia.RuntimeEffect.Make(`
 uniform vec2 u_resolution;
 uniform float u_pixelSize;
 uniform shader image;
@@ -45,10 +46,12 @@ half4 main(float2 xy) {
   vec2 uv = xy / u_resolution;
   vec2 pixelatedUV = floor(uv / u_pixelSize) * u_pixelSize;
   return image.eval(pixelatedUV * u_resolution);
-}`)!;
+}`);
+
+const pixelateShader = pixelateSource;
 
 // Sharpen shader
-const sharpenShader = Skia.RuntimeEffect.Make(`
+const sharpenSource = Skia.RuntimeEffect.Make(`
 uniform shader image;
 uniform vec2 u_resolution;
 uniform float u_amount;
@@ -67,7 +70,9 @@ half4 main(vec2 xy) {
   half4 sharpened = center * (1.0 + 4.0 * u_amount) - (top + right + bottom + left) * u_amount;
   
   return sharpened;
-}`)!;
+}`);
+
+const sharpenShader = sharpenSource;
 
 export interface ImageViewHandle {
   captureFilteredImage: () => Promise<string | null>;
@@ -99,15 +104,7 @@ const OldDigitalCameraImage = forwardRef<ImageViewHandle, {uri: string}>(
 
         // Convert to base64
         const data = snapshot.encodeToBase64();
-
-        // Create a temporary file path
-        const tempFilePath = `${
-          RNFS.CachesDirectoryPath
-        }/filtered_image_${Date.now()}.png`;
-
-        // Write the base64 data to a file
-        await RNFS.writeFile(tempFilePath, data, 'base64');
-
+        const tempFilePath = await writeBase64(data, 'png');
         console.log('Filtered image saved to:', tempFilePath);
         return tempFilePath;
       } catch (error) {
@@ -122,6 +119,21 @@ const OldDigitalCameraImage = forwardRef<ImageViewHandle, {uri: string}>(
 
     if (!image) {
       return <View style={[styles.image, styles.imagePlaceholder]} />;
+    }
+
+    if (!sharpenShader || !pixelateShader) {
+      return (
+        <Canvas ref={canvasRef} style={styles.image}>
+          <Image
+            image={image}
+            fit="contain"
+            x={0}
+            y={0}
+            width={width}
+            height={height * 0.8}
+          />
+        </Canvas>
+      );
     }
 
     return (
@@ -177,6 +189,8 @@ const OldDigitalCameraImage = forwardRef<ImageViewHandle, {uri: string}>(
   },
 );
 
+OldDigitalCameraImage.displayName = 'OldDigitalCameraImage';
+
 const ImageView = ({uri}: {uri: string}) => {
   const imageRef = useRef<ImageViewHandle>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -202,7 +216,12 @@ const ImageView = ({uri}: {uri: string}) => {
       }
 
       await cameraStore.saveToGallery(filteredImagePath);
-      Alert.alert('Success', 'Image saved to gallery with filters applied');
+      Alert.alert(
+        'Success',
+        Platform.OS === 'web'
+          ? 'Filtered image download started'
+          : 'Image saved to gallery with filters applied',
+      );
     } catch (error) {
       console.error('Error saving to gallery:', error);
       Alert.alert('Error', 'Failed to save image to gallery');

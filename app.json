@@ -1,4 +1,50 @@
 {
-  "name": "DigiCamSim",
-  "displayName": "DigiCamSim"
+  "expo": {
+    "name": "DigiCamSim",
+    "slug": "digicamsim",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "digicamsim",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.digicamsim",
+      "infoPlist": {
+        "NSCameraUsageDescription": "DigiCamSim needs access to your camera to take photos.",
+        "NSPhotoLibraryUsageDescription": "DigiCamSim needs access to your photo library.",
+        "NSPhotoLibraryAddUsageDescription": "DigiCamSim saves photos to your library."
+      }
+    },
+    "android": {
+      "package": "com.digicamsim",
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["android.permission.CAMERA"],
+      "adaptiveIcon": {
+        "backgroundColor": "#1A1A1A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-dev-client",
+      "expo-image",
+      "expo-status-bar",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "DigiCamSim needs access to your photo library.",
+          "savePhotosPermission": "DigiCamSim saves photos to your library.",
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": ["photo"]
+        }
+      ]
+    ]
+  }
 }
