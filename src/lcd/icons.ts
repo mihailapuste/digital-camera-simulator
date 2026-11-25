@@ -109,46 +109,101 @@ export function batteryIcon(
   ]);
 }
 
-export function focusBrackets(
-  viewWidth: number,
-  viewHeight: number,
-  insetX: number,
-  insetY: number,
-  arm: number,
-  thickness: number,
+export function iconWell(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  fill: string,
+): SceneNode {
+  return rect(x, y, width, height, {rx: 4, ry: 4, fill});
+}
+
+/** Red-eye mark: an eye, with the pupil recolored when reduction is active. */
+export function redEyeGlyph(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: string,
+  pupil: string,
+): SceneNode {
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+  const rx = width * 0.32;
+  const ry = height * 0.2;
+  return group([
+    ellipse(cx, cy, rx, ry, {
+      fill: 'none',
+      stroke: color,
+      strokeWidth: 1.7,
+    }),
+    circle(cx, cy, Math.min(rx, ry) * 0.42, {fill: pupil}),
+  ]);
+}
+
+/** Scene-mode mark: a frame with a peak inside, the third status glyph. */
+export function sceneModeGlyph(
+  x: number,
+  y: number,
+  size: number,
   color: string,
 ): SceneNode {
-  const corners: [number, number, number, number, number, number][] = [
-    [insetX, insetY, arm, thickness, insetX, insetY],
-    [
-      viewWidth - insetX - arm,
-      insetY,
-      arm,
-      thickness,
-      viewWidth - insetX - thickness,
-      insetY,
-    ],
-    [
-      insetX,
-      viewHeight - insetY - thickness,
-      arm,
-      thickness,
-      insetX,
-      viewHeight - insetY - arm,
-    ],
-    [
-      viewWidth - insetX - arm,
-      viewHeight - insetY - thickness,
-      arm,
-      thickness,
-      viewWidth - insetX - thickness,
-      viewHeight - insetY - arm,
-    ],
-  ];
-  return group(
-    corners.flatMap(([hx, hy, hw, hh, vx, vy]) => [
-      rect(hx, hy, hw, hh, {fill: color}),
-      rect(vx, vy, thickness, arm, {fill: color}),
-    ]),
-  );
+  const h = size * 0.78;
+  return group([
+    rect(x, y, size, h, {
+      fill: 'none',
+      stroke: color,
+      strokeWidth: 1.6,
+      rx: 1.5,
+    }),
+    path(
+      `M${fmt(x + 1.8)} ${fmt(y + h * 0.72)} L${fmt(x + size * 0.36)} ${fmt(y + h * 0.34)} L${fmt(x + size * 0.52)} ${fmt(y + h * 0.52)} L${fmt(x + size * 0.74)} ${fmt(y + h * 0.26)} L${fmt(x + size - 1.8)} ${fmt(y + h * 0.72)} Z`,
+      {fill: color},
+    ),
+  ]);
+}
+
+/** Large-quality mark: two stacked frames, the period "L" sits beside it. */
+export function qualityGlyph(x: number, y: number, color: string): SceneNode {
+  return group([
+    rect(x + 5, y, 15, 12, {
+      fill: 'none',
+      stroke: color,
+      strokeWidth: 1.4,
+      rx: 1,
+    }),
+    rect(x, y + 5, 15, 12, {
+      fill: 'none',
+      stroke: color,
+      strokeWidth: 1.5,
+      rx: 1,
+    }),
+    path(
+      `M${fmt(x + 2)} ${fmt(y + 14)} L${fmt(x + 6)} ${fmt(y + 9)} L${fmt(x + 9)} ${fmt(y + 12)} L${fmt(x + 13)} ${fmt(y + 8)}`,
+      {
+        fill: 'none',
+        stroke: color,
+        strokeWidth: 1.2,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+      },
+    ),
+  ]);
+}
+
+export function focusWindow(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: string,
+  strokeWidth: number,
+): SceneNode {
+  return rect(x, y, width, height, {
+    rx: 1.5,
+    fill: 'none',
+    stroke: color,
+    strokeWidth,
+  });
 }

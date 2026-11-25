@@ -16,6 +16,10 @@ export const SKIN_CONTROLS = [
   'zoomOut',
   'review',
   'power',
+  'display',
+  'func',
+  'menu',
+  'set',
 ] as const;
 
 export type SkinControlId = (typeof SKIN_CONTROLS)[number];
@@ -57,6 +61,14 @@ export type CameraSkinProps = {
   onZoomOut?: () => void;
   onReview?: () => void;
   onPower?: () => void;
+  /** DISP. Toggles the LCD overlay. */
+  onDisplay?: () => void;
+  /** FUNC. Opens the preset / look picker. */
+  onFunc?: () => void;
+  /** MENU. Opens settings. */
+  onMenu?: () => void;
+  /** SET. Confirms the current choice. */
+  onSet?: () => void;
   /** Drawn inside the LCD cutout, above an optional preview. */
   children?: ReactNode;
 };

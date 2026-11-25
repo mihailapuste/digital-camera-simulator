@@ -1,5 +1,5 @@
 /**
- * Rasterize the three camera skins to PNG.
+ * Rasterize the camera skin to PNG.
  * Run from the repo root after `npm install --no-save --prefix /tmp/skinrender @resvg/resvg-js esbuild`
  * or with those packages available on NODE_PATH.
  */
@@ -35,7 +35,7 @@ mkdirSync(outDir, {recursive: true});
 for (const preview of buildPreviews()) {
   const resvg = new Resvg(preview.svg, {
     fitTo: {mode: 'width', value: 720},
-    background: '#121418',
+    background: '#E6E1D6',
   });
   const png = resvg.render().asPng();
   const file = join(outDir, preview.filename);

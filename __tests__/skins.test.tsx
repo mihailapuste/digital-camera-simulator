@@ -2,102 +2,100 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import {StyleSheet, Text, View} from 'react-native';
 import {
-  CoolpixBlueSkin,
-  CyberBlackSkin,
-  IxySilverSkin,
+  SilverCompactSkin,
   SkinStage,
   buildPreviews,
-  coolpixBlueCutout,
-  coolpixBlueLayout,
-  coolpixBlueScene,
-  cyberBlackCutout,
-  cyberBlackLayout,
-  cyberBlackScene,
   defaultSkinId,
   getSkin,
-  ixySilverCutout,
-  ixySilverLayout,
-  ixySilverScene,
   layoutIssues,
   listSkins,
   resolveSkinLayout,
   sceneToSvg,
+  silverCompactCutout,
+  silverCompactLayout,
+  silverCompactScene,
   skinAspectRatio,
 } from '../src/skins';
 import {sceneIssues} from '../src/skins/sceneModel';
 import {roundedRectPath} from '../src/skins/shapes';
 
-const bodies = [
-  {
-    name: 'Ixy Silver',
-    scene: ixySilverScene,
-    layout: ixySilverLayout,
-    cutout: ixySilverCutout,
-    Component: IxySilverSkin,
-  },
-  {
-    name: 'Cyber Black',
-    scene: cyberBlackScene,
-    layout: cyberBlackLayout,
-    cutout: cyberBlackCutout,
-    Component: CyberBlackSkin,
-  },
-  {
-    name: 'Coolpix-ish Blue',
-    scene: coolpixBlueScene,
-    layout: coolpixBlueLayout,
-    cutout: coolpixBlueCutout,
-    Component: CoolpixBlueSkin,
-  },
-];
-
-test('registry lists three original skins and a default', () => {
+test('registry keeps a single silver compact and falls back to it', () => {
   const skins = listSkins();
-  expect(skins.map(skin => skin.name)).toEqual([
-    'Ixy Silver',
-    'Cyber Black',
-    'Coolpix-ish Blue',
-  ]);
-  expect(new Set(skins.map(skin => skin.id)).size).toBe(3);
-  expect(defaultSkinId).toBe('ixy-silver');
+  expect(skins.map(skin => skin.name)).toEqual(['Silver Compact']);
+  expect(skins.map(skin => skin.id)).toEqual(['silver-compact']);
+  expect(defaultSkinId).toBe('silver-compact');
   expect(getSkin().id).toBe(defaultSkinId);
   expect(getSkin('missing').id).toBe(defaultSkinId);
-  expect(getSkin('cyber-black').name).toBe('Cyber Black');
+  expect(getSkin('silver-compact').lcdTheme).toBe('classic');
 });
 
-test('layout rects are inside the body and describe a 4:3 cutout', () => {
-  for (const body of bodies) {
-    expect(layoutIssues(body.layout)).toEqual([]);
-    expect(skinAspectRatio(body.layout)).toBeCloseTo(360 / 780);
-    expect(sceneIssues(body.scene)).toEqual([]);
-    expect(sceneToSvg(body.scene)).toContain(roundedRectPath(body.cutout));
-  }
+test('layout rects sit on the body and describe a large 4:3 cutout', () => {
+  expect(layoutIssues(silverCompactLayout)).toEqual([]);
+  expect(skinAspectRatio(silverCompactLayout)).toBeCloseTo(360 / 780);
+  expect(sceneIssues(silverCompactScene)).toEqual([]);
+  expect(sceneToSvg(silverCompactScene)).toContain(
+    roundedRectPath(silverCompactCutout),
+  );
+  const {lcd, viewBox} = silverCompactLayout;
+  expect(lcd.width / lcd.height).toBeCloseTo(4 / 3, 2);
+  expect(
+    (lcd.width * lcd.height) / (viewBox.width * viewBox.height),
+  ).toBeGreaterThan(0.25);
+});
+
+test('physical controls map onto the matching parts of the body', () => {
+  const {lcd, controls} = silverCompactLayout;
+  const lcdBottom = lcd.y + lcd.height;
+  expect(controls.shutter.y + controls.shutter.height).toBeLessThan(lcd.y);
+  expect(controls.zoomIn.y + controls.zoomIn.height).toBeLessThan(lcd.y);
+  expect(controls.zoomOut.y).toBe(controls.zoomIn.y);
+  expect(controls.power.y).toBeLessThan(lcd.y);
+  expect(controls.set.y).toBeGreaterThan(lcdBottom);
+  expect(controls.menu.y).toBe(controls.set.y);
+  expect(controls.mode.y).toBeGreaterThan(controls.set.y);
+  expect(controls.review.y).toBe(controls.mode.y);
+  expect(controls.review.x).toBeGreaterThan(controls.mode.x);
+  expect(controls.flash.y).toBeGreaterThan(controls.mode.y);
+  expect(controls.func.y).toBeGreaterThan(controls.flash.y);
+  expect(controls.display.y).toBe(controls.func.y);
+  expect(controls.display.x).toBeGreaterThan(controls.func.x);
 });
 
 test('resolveSkinLayout contain-fits the cutout on any viewport', () => {
-  const fitted = resolveSkinLayout(ixySilverLayout, {width: 360, height: 780});
+  const fitted = resolveSkinLayout(silverCompactLayout, {
+    width: 360,
+    height: 780,
+  });
   expect(fitted.scale).toBe(1);
-  expect(fitted.lcd).toEqual({left: 44, top: 168, width: 272, height: 204});
+  expect(fitted.offsetX).toBe(0);
+  expect(fitted.lcd).toEqual({left: 22, top: 118, width: 320, height: 240});
 
-  const half = resolveSkinLayout(ixySilverLayout, {width: 180, height: 390});
+  const half = resolveSkinLayout(silverCompactLayout, {
+    width: 180,
+    height: 390,
+  });
   expect(half.scale).toBeCloseTo(0.5);
-  expect(half.lcd.left).toBeCloseTo(22);
-  expect(half.lcd.width).toBeCloseTo(136);
+  expect(half.lcd.left).toBeCloseTo(11);
+  expect(half.lcd.width).toBeCloseTo(160);
 
-  const tall = resolveSkinLayout(ixySilverLayout, {width: 360, height: 1000});
+  const tall = resolveSkinLayout(silverCompactLayout, {
+    width: 360,
+    height: 1000,
+  });
   expect(tall.offsetY).toBeCloseTo(110);
-  expect(tall.lcd.top).toBeCloseTo(278);
+  expect(tall.lcd.top).toBeCloseTo(228);
 
-  const wide = resolveSkinLayout(ixySilverLayout, {width: 800, height: 780});
+  const wide = resolveSkinLayout(silverCompactLayout, {
+    width: 800,
+    height: 780,
+  });
   expect(wide.offsetX).toBeCloseTo(220);
-  expect(wide.lcd.left).toBeCloseTo(264);
+  expect(wide.lcd.left).toBeCloseTo(242);
   expect(wide.frame.width).toBeCloseTo(360);
 });
 
-test('skin svg snapshots', () => {
-  expect(sceneToSvg(ixySilverScene)).toMatchSnapshot();
-  expect(sceneToSvg(cyberBlackScene)).toMatchSnapshot();
-  expect(sceneToSvg(coolpixBlueScene)).toMatchSnapshot();
+test('skin svg snapshot', () => {
+  expect(sceneToSvg(silverCompactScene)).toMatchSnapshot();
 });
 
 test('buttons call their handlers and the lcd slot is positioned', async () => {
@@ -109,52 +107,63 @@ test('buttons call their handlers and the lcd slot is positioned', async () => {
     onZoomOut: jest.fn(),
     onReview: jest.fn(),
     onPower: jest.fn(),
+    onDisplay: jest.fn(),
+    onFunc: jest.fn(),
+    onMenu: jest.fn(),
+    onSet: jest.fn(),
   };
   let renderer: ReactTestRenderer.ReactTestRenderer;
   await ReactTestRenderer.act(() => {
     renderer = ReactTestRenderer.create(
-      <IxySilverSkin width={360} height={780} {...handlers}>
+      <SilverCompactSkin width={360} height={780} {...handlers}>
         <View testID="lcd-child" />
-      </IxySilverSkin>,
+      </SilverCompactSkin>,
     );
   });
   const slot = renderer!.root.findByProps({testID: 'skin-lcd-slot'});
   const slotStyle = StyleSheet.flatten(slot.props.style);
   expect(slotStyle).toMatchObject({
-    left: 44,
-    top: 168,
-    width: 272,
-    height: 204,
+    left: 22,
+    top: 118,
+    width: 320,
+    height: 240,
   });
   expect(renderer!.root.findByProps({testID: 'lcd-child'})).toBeTruthy();
 
-  for (const [testID, handler] of [
-    ['skin-shutter', handlers.onShutter],
-    ['skin-flash', handlers.onFlash],
-    ['skin-mode', handlers.onMode],
-    ['skin-zoom-in', handlers.onZoomIn],
-    ['skin-zoom-out', handlers.onZoomOut],
-    ['skin-review', handlers.onReview],
-    ['skin-power', handlers.onPower],
-  ] as const) {
+  const labeled = [
+    ['skin-shutter', 'Shutter', handlers.onShutter],
+    ['skin-flash', 'Flash', handlers.onFlash],
+    ['skin-mode', 'Camera', handlers.onMode],
+    ['skin-zoom-in', 'Zoom in', handlers.onZoomIn],
+    ['skin-zoom-out', 'Zoom out', handlers.onZoomOut],
+    ['skin-review', 'Gallery', handlers.onReview],
+    ['skin-power', 'Power', handlers.onPower],
+    ['skin-display', 'Display', handlers.onDisplay],
+    ['skin-func', 'Function', handlers.onFunc],
+    ['skin-menu', 'Menu', handlers.onMenu],
+    ['skin-set', 'Set', handlers.onSet],
+  ] as const;
+  for (const [testID, label, handler] of labeled) {
+    const button = renderer!.root.findByProps({testID});
+    expect(button.props.accessibilityLabel).toBe(label);
     await ReactTestRenderer.act(() => {
-      renderer.root.findByProps({testID}).props.onPress();
+      button.props.onPress();
     });
     expect(handler).toHaveBeenCalledTimes(1);
   }
 });
 
-test('every body renders its controls', async () => {
-  for (const body of bodies) {
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-    await ReactTestRenderer.act(() => {
-      renderer = ReactTestRenderer.create(
-        <body.Component width={180} height={390} />,
-      );
-    });
-    expect(renderer!.root.findByProps({testID: 'skin-shutter'})).toBeTruthy();
-    expect(renderer!.root.findByProps({testID: 'skin-power'})).toBeTruthy();
-  }
+test('the body renders its controls', async () => {
+  let renderer: ReactTestRenderer.ReactTestRenderer;
+  await ReactTestRenderer.act(() => {
+    renderer = ReactTestRenderer.create(
+      <SilverCompactSkin width={180} height={390} />,
+    );
+  });
+  expect(renderer!.root.findByProps({testID: 'skin-shutter'})).toBeTruthy();
+  expect(renderer!.root.findByProps({testID: 'skin-power'})).toBeTruthy();
+  expect(renderer!.root.findByProps({testID: 'skin-display'})).toBeTruthy();
+  expect(renderer!.root.findByProps({testID: 'skin-set'})).toBeTruthy();
 });
 
 test('SkinStage nests the preview and themed overlay in the cutout', async () => {
@@ -162,7 +171,6 @@ test('SkinStage nests the preview and themed overlay in the cutout', async () =>
   await ReactTestRenderer.act(() => {
     renderer = ReactTestRenderer.create(
       <SkinStage
-        skinId="coolpix-blue"
         width={360}
         height={780}
         preview={<Text testID="live-preview">preview</Text>}
@@ -188,16 +196,15 @@ test('SkinStage nests the preview and themed overlay in the cutout', async () =>
   ).toHaveLength(0);
 });
 
-test('headless previews carry each skin and a distinct OSD state', () => {
+test('the headless preview is the silver compact with the period hud', () => {
   const previews = buildPreviews();
   expect(previews.map(preview => preview.filename)).toEqual([
-    'ixy-silver.png',
-    'cyber-black.png',
-    'coolpix-blue.png',
+    'silver-compact.png',
   ]);
-  const [ixy, cyber, blue] = previews;
-  expect(ixy.svg).toContain('#3DFF6E');
-  expect(cyber.svg).toContain('#C9F6FF');
-  expect(blue.svg).toContain('rgba(40,18,0,0.48)');
-  expect(blue.svg).toContain('#FF5A4A');
+  const [silver] = previews;
+  expect(silver.svg).toContain('#F4F7FB');
+  expect(silver.svg).toContain('#121722');
+  expect(silver.svg).toContain('#D64545');
+  expect(silver.svg).not.toContain('Canon');
+  expect(silver.svg).not.toContain('PowerShot');
 });

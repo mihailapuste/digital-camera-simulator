@@ -21,11 +21,15 @@ const BUTTONS: Record<
 > = {
   shutter: {label: 'Shutter', testID: 'skin-shutter', handler: 'onShutter'},
   flash: {label: 'Flash', testID: 'skin-flash', handler: 'onFlash'},
-  mode: {label: 'Mode', testID: 'skin-mode', handler: 'onMode'},
+  mode: {label: 'Camera', testID: 'skin-mode', handler: 'onMode'},
   zoomIn: {label: 'Zoom in', testID: 'skin-zoom-in', handler: 'onZoomIn'},
   zoomOut: {label: 'Zoom out', testID: 'skin-zoom-out', handler: 'onZoomOut'},
-  review: {label: 'Review', testID: 'skin-review', handler: 'onReview'},
+  review: {label: 'Gallery', testID: 'skin-review', handler: 'onReview'},
   power: {label: 'Power', testID: 'skin-power', handler: 'onPower'},
+  display: {label: 'Display', testID: 'skin-display', handler: 'onDisplay'},
+  func: {label: 'Function', testID: 'skin-func', handler: 'onFunc'},
+  menu: {label: 'Menu', testID: 'skin-menu', handler: 'onMenu'},
+  set: {label: 'Set', testID: 'skin-set', handler: 'onSet'},
 };
 
 type CameraBodySkinProps = CameraSkinProps & {

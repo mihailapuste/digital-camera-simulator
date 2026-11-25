@@ -1,8 +1,6 @@
 import {sceneToSvg} from './sceneToSvg';
 import {composeSkinPreview, type PreviewSample} from './composePreview';
-import {coolpixBlueLayout, coolpixBlueScene} from './coolpixBlue';
-import {cyberBlackLayout, cyberBlackScene} from './cyberBlack';
-import {ixySilverLayout, ixySilverScene} from './ixySilver';
+import {silverCompactLayout, silverCompactScene} from './silverCompact';
 import type {Scene} from './sceneModel';
 import type {SkinLayout} from './types';
 
@@ -19,44 +17,16 @@ const samples: {
   sample: PreviewSample;
 }[] = [
   {
-    id: 'ixy-silver',
-    scene: ixySilverScene,
-    layout: ixySilverLayout,
+    id: 'silver-compact',
+    scene: silverCompactScene,
+    layout: silverCompactLayout,
     sample: {
       theme: 'classic',
       flashMode: 'auto',
-      focus: 'locked',
-      mode: 'live',
-      shotsRemaining: 18,
-      batteryLevel: 0.8,
-      dateText: '2004.11.25',
-    },
-  },
-  {
-    id: 'cyber-black',
-    scene: cyberBlackScene,
-    layout: cyberBlackLayout,
-    sample: {
-      theme: 'ice',
-      flashMode: 'on',
-      focus: 'searching',
-      mode: 'live',
-      shotsRemaining: 42,
-      batteryLevel: 0.55,
-      dateText: '2004.11.25',
-    },
-  },
-  {
-    id: 'coolpix-blue',
-    scene: coolpixBlueScene,
-    layout: coolpixBlueLayout,
-    sample: {
-      theme: 'amber',
-      flashMode: 'red-eye',
       focus: 'idle',
-      mode: 'review',
-      shotsRemaining: 7,
-      batteryLevel: 0.12,
+      mode: 'live',
+      shotsRemaining: 68,
+      batteryLevel: 0.8,
       dateText: '2004.11.25',
     },
   },
