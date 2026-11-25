@@ -32,12 +32,13 @@ export const SkinStage: React.FC<SkinStageProps> = ({
   showLcd = true,
   foreground,
   rotation,
+  safeArea,
   onExpandViewfinder,
   ...callbacks
 }) => {
   const skin = getSkin(skinId);
   const layout = {...skin.layout, rotation: rotation ?? skin.layout.rotation};
-  const placed = resolveSkinLayout(layout, {width, height});
+  const placed = resolveSkinLayout(layout, {width, height}, safeArea);
   const Body = skin.Component;
   const turned = layout.rotation === 90;
   const plate = (
@@ -71,6 +72,7 @@ export const SkinStage: React.FC<SkinStageProps> = ({
       width={width}
       height={height}
       rotation={rotation}
+      safeArea={safeArea}
       onExpandViewfinder={onExpandViewfinder}
       {...callbacks}>
       {turned ? (

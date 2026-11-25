@@ -10,6 +10,7 @@ export const silverCompactMeta = {
 // Coordinates are measured on the unrotated body artwork.
 export const silverCompactLayout: SkinLayout = {
   viewBox: {width: 1282, height: 724},
+  bleed: {x: 48, y: 48, width: 1206, height: 642},
   rotation: 90,
   lcd: {x: 104, y: 139, width: 678, height: 505},
   lcdRadius: 5,

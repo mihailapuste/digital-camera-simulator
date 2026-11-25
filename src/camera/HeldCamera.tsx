@@ -215,25 +215,23 @@ export const HeldCamera = observer(function HeldCamera({
     <View style={styles.root}>
       {focused ? <StatusBar hidden /> : null}
       {expanded ? (
-        <View
-          testID="expanded-viewfinder"
-          style={
-            sideways ? sidewaysFrame(window.width, window.height) : styles.stage
-          }>
-          {preview}
+        <View testID="expanded-viewfinder" style={styles.stage}>
           <View
+            style={
+              sideways
+                ? sidewaysFrame(window.width, window.height)
+                : StyleSheet.absoluteFill
+            }>
+            {preview}
+          </View>
+          <View
+            testID="expanded-viewfinder-controls"
             style={[
               styles.actionBar,
               {
-                paddingLeft: Math.max(12, sideways ? insets.top : insets.left),
-                paddingRight: Math.max(
-                  12,
-                  sideways ? insets.bottom : insets.right,
-                ),
-                paddingBottom: Math.max(
-                  8,
-                  sideways ? insets.left : insets.bottom,
-                ),
+                paddingLeft: Math.max(12, insets.left),
+                paddingRight: Math.max(12, insets.right),
+                paddingBottom: Math.max(8, insets.bottom),
               },
             ]}>
             <ViewfinderAction
@@ -269,6 +267,7 @@ export const HeldCamera = observer(function HeldCamera({
               width={stageSize.width}
               height={stageSize.height}
               rotation={sideways ? 90 : 0}
+              safeArea={insets}
               showLcd={overlay}
               preview={preview}
               lcd={{
@@ -307,7 +306,7 @@ export const HeldCamera = observer(function HeldCamera({
       )}
       <PresetPicker
         visible={menuOpen}
-        sideways={sideways}
+        sideways={sideways && !expanded}
         selectedId={pendingPreset}
         onSelect={setPendingPreset}
         onCancel={() => setMenuOpen(false)}
@@ -350,6 +349,10 @@ const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: '#111111'},
   stage: {flex: 1},
   actionBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,

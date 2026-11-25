@@ -5,6 +5,7 @@ import {
   type ResolvedSkinLayout,
   type SkinLayout,
 } from './types';
+import type {EdgeInsets} from 'react-native-safe-area-context';
 
 function drawnSize(layout: SkinLayout): {width: number; height: number} {
   if (layout.rotation === 90) {
@@ -34,9 +35,7 @@ export function mapDesignPoint(
   const offsetX = (viewport.width - drawn.width * scale) / 2;
   const offsetY = (viewport.height - drawn.height * scale) / 2;
   const rotated =
-    layout.rotation === 90
-      ? {x: layout.viewBox.height - y, y: x}
-      : {x, y};
+    layout.rotation === 90 ? {x: layout.viewBox.height - y, y: x} : {x, y};
   return {
     x: offsetX + rotated.x * scale,
     y: offsetY + rotated.y * scale,
@@ -67,14 +66,121 @@ function mapRect(
   };
 }
 
-/**
- * Fit the skin inside a viewport with the same aspect ratio as the artwork,
- * then return pixel rects for the LCD and every button.
- */
+function fitAxis(
+  start: number,
+  size: number,
+  contentStart: number,
+  contentEnd: number,
+  length: number,
+  insetStart: number,
+  insetEnd: number,
+) {
+  const scale = length / size;
+  const naturalStart = (contentStart - start) * scale;
+  const naturalEnd = (contentEnd - start) * scale;
+  // Keep the original edge proportions unless an inset needs extra room.
+  const safeStart = Math.max(naturalStart, insetStart);
+  const safeEnd = Math.min(naturalEnd, length - insetEnd);
+  if (
+    safeStart >= safeEnd ||
+    (safeStart === naturalStart && safeEnd === naturalEnd)
+  ) {
+    const band = {start, from: 0, to: length, scale};
+    return {bands: [band], content: band};
+  }
+  const edges = [
+    {source: start, target: 0},
+    {source: contentStart, target: safeStart},
+    {source: contentEnd, target: safeEnd},
+    {source: start + size, target: length},
+  ];
+  const bands = edges.slice(1).map(({source: end, target: to}, index) => {
+    const {source: start, target: from} = edges[index];
+    return {start, from, to, scale: (to - from) / (end - start)};
+  });
+  return {bands, content: bands[1]};
+}
+
+function resolveFullBleed(
+  layout: SkinLayout,
+  crop: DesignRect,
+  viewport: {width: number; height: number},
+  insets: EdgeInsets,
+): ResolvedSkinLayout {
+  const {width, height} = viewport;
+  const drawn = drawnSize(layout);
+  const bleed = mapRect(layout, crop, 1, 0, 0);
+  const sourceRects = [
+    layout.lcd,
+    ...SKIN_CONTROLS.map(id => layout.controls[id]),
+  ].map(rect => mapRect(layout, rect, 1, 0, 0));
+  const horizontal = fitAxis(
+    bleed.left,
+    bleed.width,
+    Math.min(...sourceRects.map(rect => rect.left)),
+    Math.max(...sourceRects.map(rect => rect.left + rect.width)),
+    width,
+    insets.left,
+    insets.right,
+  );
+  const vertical = fitAxis(
+    bleed.top,
+    bleed.height,
+    Math.min(...sourceRects.map(rect => rect.top)),
+    Math.max(...sourceRects.map(rect => rect.top + rect.height)),
+    height,
+    insets.top,
+    insets.bottom,
+  );
+  const centerX = horizontal.content;
+  const centerY = vertical.content;
+  const offsetX = centerX.from - centerX.start * centerX.scale;
+  const offsetY = centerY.from - centerY.start * centerY.scale;
+  const place = (rect: PixelRect): PixelRect => ({
+    left: offsetX + rect.left * centerX.scale,
+    top: offsetY + rect.top * centerY.scale,
+    width: rect.width * centerX.scale,
+    height: rect.height * centerY.scale,
+  });
+  const controls = {} as ResolvedSkinLayout['controls'];
+  SKIN_CONTROLS.forEach((id, index) => {
+    controls[id] = place(sourceRects[index + 1]);
+  });
+  return {
+    scale: Math.min(centerX.scale, centerY.scale),
+    offsetX,
+    offsetY,
+    frame: {left: 0, top: 0, width, height},
+    lcd: place(sourceRects[0]),
+    controls,
+    artworkTiles: vertical.bands.flatMap(y =>
+      horizontal.bands.map(x => ({
+        clip: {
+          left: x.from,
+          top: y.from,
+          width: x.to - x.from,
+          height: y.to - y.from,
+        },
+        frame: {
+          left: -x.start * x.scale,
+          top: -y.start * y.scale,
+          width: drawn.width * x.scale,
+          height: drawn.height * y.scale,
+        },
+      })),
+    ),
+  };
+}
+
+/** Map the artwork, LCD, and controls through the same viewport layout. */
 export function resolveSkinLayout(
   layout: SkinLayout,
   viewport: {width: number; height: number},
+  safeArea?: EdgeInsets,
 ): ResolvedSkinLayout {
+  if (safeArea && layout.bleed && viewport.width > 0 && viewport.height > 0) {
+    return resolveFullBleed(layout, layout.bleed, viewport, safeArea);
+  }
   const drawn = drawnSize(layout);
   const scale =
     drawn.width > 0 &&
@@ -89,7 +195,13 @@ export function resolveSkinLayout(
   const offsetY = (viewport.height - drawnHeight) / 2;
   const controls = {} as ResolvedSkinLayout['controls'];
   for (const id of SKIN_CONTROLS) {
-    controls[id] = mapRect(layout, layout.controls[id], scale, offsetX, offsetY);
+    controls[id] = mapRect(
+      layout,
+      layout.controls[id],
+      scale,
+      offsetX,
+      offsetY,
+    );
   }
   return {
     scale,

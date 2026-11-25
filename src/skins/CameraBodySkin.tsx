@@ -12,7 +12,7 @@ import {
 
 type SkinHandler = Exclude<
   keyof CameraSkinProps,
-  'width' | 'height' | 'rotation' | 'children'
+  'width' | 'height' | 'rotation' | 'safeArea' | 'children'
 >;
 
 const BUTTONS: Record<
@@ -60,23 +60,42 @@ export function CameraBodySkin({
   artwork,
   width,
   height,
+  safeArea,
   children,
   ...callbacks
 }: CameraBodySkinProps) {
-  const placed = resolveSkinLayout(layout, {width, height});
-  const {frame, lcd, scale} = placed;
+  const placed = resolveSkinLayout(layout, {width, height}, safeArea);
+  const {frame, lcd, scale, artworkTiles} = placed;
   return (
     <View testID={`skin-${skinId}`} style={{width, height}}>
-      <View pointerEvents="none" style={[styles.art, frame]}>
-        <Image
-          source={artwork}
-          contentFit="fill"
-          style={
-            layout.rotation === 90
-              ? sidewaysFrame(frame.width, frame.height)
-              : StyleSheet.absoluteFill
-          }
-        />
+      <View pointerEvents="none" style={[styles.art, styles.clip, frame]}>
+        {(
+          artworkTiles ?? [
+            {
+              clip: {left: 0, top: 0, width: frame.width, height: frame.height},
+              frame: {
+                left: 0,
+                top: 0,
+                width: frame.width,
+                height: frame.height,
+              },
+            },
+          ]
+        ).map(({clip, frame: imageFrame}, index) => (
+          <View key={index} style={[styles.art, styles.clip, clip]}>
+            <View style={[styles.art, imageFrame]}>
+              <Image
+                source={artwork}
+                contentFit="fill"
+                style={
+                  layout.rotation === 90
+                    ? sidewaysFrame(imageFrame.width, imageFrame.height)
+                    : StyleSheet.absoluteFill
+                }
+              />
+            </View>
+          </View>
+        ))}
       </View>
       <View
         testID="skin-lcd-slot"
@@ -101,7 +120,9 @@ export function CameraBodySkin({
             accessibilityRole="button"
             accessibilityLabel={button.label}
             accessibilityHint={button.hint}
-            disabled={typeof onPress !== 'function' && typeof onLongPress !== 'function'}
+            disabled={
+              typeof onPress !== 'function' && typeof onLongPress !== 'function'
+            }
             delayLongPress={420}
             onPress={typeof onPress === 'function' ? onPress : undefined}
             onLongPress={
@@ -126,6 +147,9 @@ export function CameraBodySkin({
 const styles = StyleSheet.create({
   art: {
     position: 'absolute',
+  },
+  clip: {
+    overflow: 'hidden',
   },
   lcd: {
     position: 'absolute',

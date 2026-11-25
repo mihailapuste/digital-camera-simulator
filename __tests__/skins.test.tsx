@@ -86,6 +86,51 @@ test('the body stays inside the frame on small and tall phones', () => {
   }
 });
 
+test.each([
+  {
+    viewport: {width: 393, height: 852},
+    rotation: 90 as const,
+    safeArea: {top: 59, right: 0, bottom: 34, left: 0},
+  },
+  {
+    viewport: {width: 852, height: 393},
+    rotation: 0 as const,
+    safeArea: {top: 0, right: 59, bottom: 21, left: 59},
+  },
+])(
+  'the full-bleed body fills the viewport with a $rotation degree rotation',
+  ({viewport, rotation, safeArea}) => {
+    const fitted = resolveSkinLayout(
+      {...silverCompactLayout, rotation},
+      viewport,
+      safeArea,
+    );
+    expect(fitted.frame).toEqual({left: 0, top: 0, ...viewport});
+    const covered = fitted.artworkTiles!.reduce(
+      (total, {clip}) => total + clip.width * clip.height,
+      0,
+    );
+    expect(covered).toBeCloseTo(viewport.width * viewport.height);
+    const axis = rotation === 90 ? 'top' : 'left';
+    expect(fitted.controls.zoomOut[axis]).toBeLessThan(
+      fitted.controls.zoomIn[axis],
+    );
+    expect(fitted.controls.shutter[axis]).toBeGreaterThan(
+      fitted.controls.zoomIn[axis],
+    );
+    for (const rect of [fitted.lcd, ...Object.values(fitted.controls)]) {
+      expect(rect.left).toBeGreaterThanOrEqual(safeArea.left - 0.01);
+      expect(rect.top).toBeGreaterThanOrEqual(safeArea.top - 0.01);
+      expect(rect.left + rect.width).toBeLessThanOrEqual(
+        viewport.width - safeArea.right + 0.01,
+      );
+      expect(rect.top + rect.height).toBeLessThanOrEqual(
+        viewport.height - safeArea.bottom + 0.01,
+      );
+    }
+  },
+);
+
 test('buttons call their handlers and the lcd slot is positioned', async () => {
   const handlers = {
     onShutter: jest.fn(),

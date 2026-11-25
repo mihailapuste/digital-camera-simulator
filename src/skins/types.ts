@@ -1,4 +1,5 @@
 import type {ComponentType, ReactNode} from 'react';
+import type {EdgeInsets} from 'react-native-safe-area-context';
 import type {LcdThemeName} from '../lcd/types';
 
 export type DesignRect = {
@@ -24,16 +25,13 @@ export const SKIN_CONTROLS = [
 
 export type SkinControlId = (typeof SKIN_CONTROLS)[number];
 
-/**
- * Layout in the skin's viewBox. `resolveSkinLayout` maps these rects onto
- * any viewport with the same contain-fit as the artwork, so a camera preview
- * lands on the LCD cutout at any screen size.
- */
 /** Clockwise quarter-turns applied when a landscape body is drawn on screen. */
 export type SkinRotation = 0 | 90;
 
 export type SkinLayout = {
   viewBox: {width: number; height: number};
+  /** Crop inside the outer trim when the body fills the device. */
+  bleed?: DesignRect;
   /**
    * `90` turns a landscape camera back clockwise for a portrait viewport.
    * Hit targets and the LCD are stored in the unrotated design and mapped
@@ -59,12 +57,15 @@ export type ResolvedSkinLayout = {
   frame: PixelRect;
   lcd: PixelRect;
   controls: Record<SkinControlId, PixelRect>;
+  artworkTiles?: {clip: PixelRect; frame: PixelRect}[];
 };
 
 export type CameraSkinProps = {
   width: number;
   height: number;
   rotation?: SkinRotation;
+  /** Fill the viewport while keeping the LCD and controls inside these insets. */
+  safeArea?: EdgeInsets;
   onShutter?: () => void;
   onFlash?: () => void;
   onMode?: () => void;
