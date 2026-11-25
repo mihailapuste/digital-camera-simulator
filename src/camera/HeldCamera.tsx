@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {BackHandler, StyleSheet, useWindowDimensions, View} from 'react-native';
+import {Alert, BackHandler, StyleSheet, useWindowDimensions, View} from 'react-native';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {StatusBar} from 'expo-status-bar';
@@ -9,7 +9,6 @@ import {SkinStage} from '../skins';
 import {RootStackParamList} from '../navigation/types';
 import {useStores} from '../stores';
 import {getPreset} from '../look';
-import type {FocusState} from '../lcd/types';
 import {bakeCapture, storeBakedPhoto} from './capturePipeline';
 import type {CaptureOrientation} from './frameCapture';
 import {hardwareFlash} from './hardwareFlash';
@@ -22,7 +21,6 @@ import {restingZoom, stepZoom} from './zoom';
 import {sidewaysFrame} from './sidewaysFrame';
 
 const CARD_FRAMES = 68;
-const REVIEW_MS = 1400;
 
 export type GrabbedPhoto = {
   source: string | Uint8Array;
@@ -77,10 +75,7 @@ export const HeldCamera = observer(function HeldCamera({
   const [overlay, setOverlay] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingPreset, setPendingPreset] = useState(settingsStore.presetId);
-  const [focus, setFocus] = useState<FocusState>('idle');
-  const [reviewUri, setReviewUri] = useState<string | null>(null);
   const [zoom, setZoom] = useState(() => restingZoom(minZoom, maxZoom));
-  const reviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loaded = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
@@ -90,14 +85,6 @@ export const HeldCamera = observer(function HeldCamera({
   useEffect(() => {
     setZoom(restingZoom(minZoom, maxZoom));
   }, [minZoom, maxZoom]);
-
-  useEffect(() => {
-    return () => {
-      if (reviewTimer.current) {
-        clearTimeout(reviewTimer.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!focused || !expanded) {
@@ -113,15 +100,6 @@ export const HeldCamera = observer(function HeldCamera({
     return () => subscription.remove();
   }, [expanded, focused]);
 
-  const clearReview = () => {
-    if (reviewTimer.current) {
-      clearTimeout(reviewTimer.current);
-      reviewTimer.current = null;
-    }
-    setReviewUri(null);
-    setFocus('idle');
-  };
-
   const activePreset = knownPreset(settingsStore.presetId);
   const stamp = stampFromSettings(settingsStore);
   const shotsRemaining = Math.max(0, CARD_FRAMES - cameraStore.imageCount);
@@ -135,7 +113,6 @@ export const HeldCamera = observer(function HeldCamera({
     if (settingsStore.shutterSound) {
       playShutterClick();
     }
-    setFocus('locked');
     cameraStore.setCapturing(true);
     try {
       await loaded.current;
@@ -145,11 +122,10 @@ export const HeldCamera = observer(function HeldCamera({
         enableShutterSound: settingsStore.shutterSound,
       });
       if (!grabbed) {
-        setFocus('idle');
         return;
       }
       const presetId = knownPreset(settingsStore.presetId);
-      const baked = await bakeCapture(
+      await bakeCapture(
         {
           source: grabbed.source,
           orientation: grabbed.orientation,
@@ -162,18 +138,18 @@ export const HeldCamera = observer(function HeldCamera({
           saveRoll: uri => cameraStore.saveToGallery(uri),
         },
       );
-      setReviewUri(baked.uri);
-      reviewTimer.current = setTimeout(clearReview, REVIEW_MS);
     } catch (error) {
       console.error('Error taking photo:', error);
-      setFocus('idle');
+      Alert.alert(
+        'Couldn’t take photo',
+        error instanceof Error ? error.message : 'Please try the shutter again.',
+      );
     } finally {
       cameraStore.setCapturing(false);
     }
   };
 
   const openGallery = () => {
-    clearReview();
     navigation.navigate('Gallery');
   };
 
@@ -198,10 +174,9 @@ export const HeldCamera = observer(function HeldCamera({
     <ViewfinderPlate
       preview={renderPreview({
         zoom,
-        active: focused && reviewUri == null,
+        active: focused,
         sideways,
       })}
-      reviewUri={reviewUri}
       presetId={activePreset}
       stamp={stamp}
       hudShotsRemaining={!expanded && overlay ? shotsRemaining : undefined}
@@ -265,10 +240,10 @@ export const HeldCamera = observer(function HeldCamera({
                 shotsRemaining,
                 onOpenPlayback: openGallery,
                 date: lcdDateLabel(settingsStore),
-                focus,
-                mode: reviewUri ? 'review' : 'live',
+                focus: cameraStore.isCapturing ? 'locked' : 'idle',
+                mode: 'live',
                 batteryLevel: 1,
-                animated: focus !== 'idle',
+                animated: cameraStore.isCapturing,
               }}
               onExpandViewfinder={() => setExpanded(true)}
               onShutter={
@@ -279,7 +254,6 @@ export const HeldCamera = observer(function HeldCamera({
               onFlash={() => settingsStore.cycleFlash()}
               onZoomIn={zoomIn}
               onZoomOut={zoomOut}
-              onMode={clearReview}
               onModeLongPress={() => settingsStore.toggleCameraPosition()}
               onReview={openGallery}
               onDisplay={() => setOverlay(value => !value)}

@@ -31,11 +31,10 @@ import type {GalleryPhoto} from '@/gallery/types';
 import {mono, playback} from '@/gallery/theme';
 import {
   EmptyPlaybackCard,
-  PlaybackBackdrop,
   PlaybackFooter,
-  PlaybackLabel,
   PlaybackMark,
 } from '@/gallery/PlaybackChrome';
+import {LcdBackdrop, LcdLabel} from '@/components/LcdChrome';
 
 type GalleryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -237,18 +236,18 @@ const GalleryScreen: React.FC = () => {
       ]}
       testID="gallery-screen">
       {focused ? <StatusBar style="light" hidden={false} /> : null}
-      <PlaybackBackdrop />
+      <LcdBackdrop />
       <View style={styles.header}>
         <View style={styles.headerTitle}>
           <PlaybackMark />
-          <PlaybackLabel
+          <LcdLabel
             text={selecting ? 'SELECT' : 'PLAYBACK'}
             scale={1.75}
             color={playback.text}
           />
         </View>
         <View style={styles.headerActions}>
-          <PlaybackLabel
+          <LcdLabel
             text={
               selecting
                 ? `${String(selected.length).padStart(3, '0')} PICKED`
@@ -263,7 +262,7 @@ const GalleryScreen: React.FC = () => {
               style={styles.headerKey}
               accessibilityRole="button"
               accessibilityLabel="Done selecting">
-              <PlaybackLabel
+              <LcdLabel
                 text="DONE"
                 scale={1.5}
                 color={playback.amberSoft}
@@ -276,7 +275,7 @@ const GalleryScreen: React.FC = () => {
               style={styles.headerKey}
               accessibilityRole="button"
               accessibilityLabel="Select photos">
-              <PlaybackLabel
+              <LcdLabel
                 text="SEL"
                 scale={1.5}
                 color={playback.amberSoft}

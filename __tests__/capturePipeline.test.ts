@@ -81,7 +81,10 @@ test('bake stores the graded jpeg and copies it to the roll only when asked', as
     jpegQuality: 68,
   }));
   const saveInApp = jest.fn(async () => 'file:///gallery/shot.jpg');
-  const saveRoll = jest.fn(async () => 'asset-1');
+  let finishCopy!: (id: string) => void;
+  const saveRoll = jest.fn(() => new Promise<string>(resolve => {
+    finishCopy = resolve;
+  }));
   const stamp = {
     enabled: true as const,
     format: 'yy mm dd' as const,
@@ -114,12 +117,14 @@ test('bake stores the graded jpeg and copies it to the roll only when asked', as
   expect(saveRoll).toHaveBeenCalledWith('file:///gallery/shot.jpg');
   expect(kept).toMatchObject({
     uri: 'file:///gallery/shot.jpg',
-    savedToRoll: true,
     width: 1600,
     height: 1200,
     presetId: 'night-flash',
   });
   expect(framed.dispose).toHaveBeenCalledTimes(1);
+
+  finishCopy('asset-1');
+  await expect(kept.savedToRoll).resolves.toBe(true);
 
   saveRoll.mockClear();
   await bakeCapture(

@@ -1,265 +1,359 @@
 import React from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {observer} from 'mobx-react-lite';
-import {useNavigation} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {StatusBar} from 'expo-status-bar';
+import Svg, {Path} from 'react-native-svg';
 import {useStores} from '@stores/index';
+import {GearIcon, LcdBackdrop, LcdLabel} from '@/components/LcdChrome';
+import {MetalKey, MetalPanel} from '@/components/MetalPanel';
 import {listPresets} from '@/look';
+
+const WHITE = '#F4F1EA';
+const AMBER = '#FFAA0A';
+const INK = '#28231C';
+
+const flashOptions = [
+  {value: 'off', label: 'Off'},
+  {value: 'on', label: 'On'},
+  {value: 'auto', label: 'Auto'},
+  {value: 'red-eye', label: 'Red-eye'},
+] as const;
+
+const cameraOptions = [
+  {value: 'back', label: 'Back'},
+  {value: 'front', label: 'Front'},
+] as const;
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const focused = useIsFocused();
+  const insets = useSafeAreaInsets();
   const {settingsStore} = useStores();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+    <View
+      testID="settings-screen"
+      style={[styles.screen, {paddingTop: insets.top}]}>
+      {focused ? <StatusBar style="light" hidden={false} /> : null}
+      <LcdBackdrop />
+      <View style={[styles.header, {paddingLeft: insets.left + 17}]}>
+        <GearIcon size={20} color={AMBER} />
+        <LcdLabel text="SETTINGS" scale={1.8} color={WHITE} />
       </View>
 
-      <ScrollView style={styles.content}>
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Flash Mode</Text>
-          <View style={styles.settingOptions}>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.flashMode === 'off' && styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setFlashMode('off')}>
-              <Text style={styles.optionText}>Off</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.flashMode === 'on' && styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setFlashMode('on')}>
-              <Text style={styles.optionText}>On</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.flashMode === 'auto' && styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setFlashMode('auto')}>
-              <Text style={styles.optionText}>Auto</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.flashMode === 'red-eye' &&
-                  styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setFlashMode('red-eye')}>
-              <Text style={styles.optionText}>Red-eye</Text>
-            </TouchableOpacity>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingLeft: insets.left + 12,
+          paddingRight: insets.right + 12,
+        }}>
+        <SettingsRow label="Flash Mode" tall>
+          <View style={styles.options}>
+            {flashOptions.map(({value, label}) => (
+              <Choice
+                key={value}
+                label={label}
+                selected={settingsStore.flashMode === value}
+                onPress={() => settingsStore.setFlashMode(value)}
+              />
+            ))}
           </View>
-        </View>
+        </SettingsRow>
 
-        <View style={styles.settingBlock}>
-          <Text style={styles.settingLabel}>Look</Text>
-          <View style={styles.chips}>
+        <View style={styles.look}>
+          <LcdLabel text="Look" scale={1.58} color={WHITE} />
+          <View style={styles.presets}>
             {listPresets().map(preset => (
-              <TouchableOpacity
+              <Choice
                 key={preset.id}
-                style={[
-                  styles.optionButton,
-                  settingsStore.presetId === preset.id &&
-                    styles.optionButtonActive,
-                ]}
-                onPress={() => settingsStore.setPresetId(preset.id)}>
-                <Text style={styles.optionText}>{preset.name}</Text>
-              </TouchableOpacity>
+                label={preset.name}
+                selected={settingsStore.presetId === preset.id}
+                onPress={() => settingsStore.setPresetId(preset.id)}
+                preset
+              />
             ))}
           </View>
         </View>
 
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Camera</Text>
-          <View style={styles.settingOptions}>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.cameraPosition === 'back' &&
-                  styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setCameraPosition('back')}>
-              <Text style={styles.optionText}>Back</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.cameraPosition === 'front' &&
-                  styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setCameraPosition('front')}>
-              <Text style={styles.optionText}>Front</Text>
-            </TouchableOpacity>
+        <SettingsRow label="Camera">
+          <View style={styles.options}>
+            {cameraOptions.map(({value, label}) => (
+              <Choice
+                key={value}
+                label={label}
+                accessibilityLabel={`${label} camera`}
+                selected={settingsStore.cameraPosition === value}
+                onPress={() => settingsStore.setCameraPosition(value)}
+                wide
+              />
+            ))}
           </View>
-        </View>
+        </SettingsRow>
 
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Date stamp</Text>
-          <Switch
-            value={settingsStore.dateStampEnabled}
-            onValueChange={value => settingsStore.setDateStampEnabled(value)}
-            trackColor={{false: '#767577', true: '#2196F3'}}
-            thumbColor={settingsStore.dateStampEnabled ? '#ffffff' : '#f4f3f4'}
+        <ToggleRow
+          label="Date stamp"
+          value={settingsStore.dateStampEnabled}
+          onChange={settingsStore.setDateStampEnabled}
+        />
+
+        <SettingsRow label="Stamp format">
+          <Choice
+            label={settingsStore.dateStampFormat}
+            accessibilityLabel={`Stamp format, ${settingsStore.dateStampFormat}`}
+            onPress={settingsStore.cycleDateStampFormat}
+            wide
           />
-        </View>
+        </SettingsRow>
 
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Stamp format</Text>
-          <TouchableOpacity
-            style={styles.optionButton}
-            onPress={() => settingsStore.cycleDateStampFormat()}>
-            <Text style={styles.optionText}>
-              {settingsStore.dateStampFormat}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Stamp year</Text>
-          <View style={styles.settingOptions}>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.dateStampClock === 'retro-year' &&
-                  styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setDateStampClock('retro-year')}>
-              <Text style={styles.optionText}>{settingsStore.retroYear}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                settingsStore.dateStampClock === 'current' &&
-                  styles.optionButtonActive,
-              ]}
-              onPress={() => settingsStore.setDateStampClock('current')}>
-              <Text style={styles.optionText}>Today</Text>
-            </TouchableOpacity>
+        <SettingsRow label="Stamp year">
+          <View style={styles.options}>
+            <Choice
+              label={String(settingsStore.retroYear)}
+              selected={settingsStore.dateStampClock === 'retro-year'}
+              onPress={() => settingsStore.setDateStampClock('retro-year')}
+              wide
+            />
+            <Choice
+              label="Today"
+              selected={settingsStore.dateStampClock === 'current'}
+              onPress={() => settingsStore.setDateStampClock('current')}
+              wide
+            />
           </View>
-        </View>
+        </SettingsRow>
 
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Shutter sound</Text>
-          <Switch
-            value={settingsStore.shutterSound}
-            onValueChange={value => settingsStore.setShutterSound(value)}
-            trackColor={{false: '#767577', true: '#2196F3'}}
-            thumbColor={settingsStore.shutterSound ? '#ffffff' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Save to camera roll</Text>
-          <Switch
-            value={settingsStore.saveToGallery}
-            onValueChange={value => settingsStore.setSaveToGallery(value)}
-            trackColor={{false: '#767577', true: '#2196F3'}}
-            thumbColor={settingsStore.saveToGallery ? '#ffffff' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Grid Lines</Text>
-          <Switch
-            value={settingsStore.showGridLines}
-            onValueChange={value => settingsStore.setShowGridLines(value)}
-            trackColor={{false: '#767577', true: '#2196F3'}}
-            thumbColor={settingsStore.showGridLines ? '#ffffff' : '#f4f3f4'}
-          />
-        </View>
+        <ToggleRow
+          label="Shutter sound"
+          value={settingsStore.shutterSound}
+          onChange={settingsStore.setShutterSound}
+        />
+        <ToggleRow
+          label="Save to camera roll"
+          value={settingsStore.saveToGallery}
+          onChange={settingsStore.setSaveToGallery}
+        />
+        <ToggleRow
+          label="Grid Lines"
+          value={settingsStore.showGridLines}
+          onChange={settingsStore.setShowGridLines}
+        />
       </ScrollView>
-    </SafeAreaView>
+
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+            paddingBottom: Math.max(10, insets.bottom),
+          },
+        ]}>
+        <MetalPanel />
+        <MetalKey
+          label="Back"
+          onPress={() => navigation.goBack()}
+          style={styles.back}>
+          <Svg width={23} height={21} viewBox="0 0 23 21" accessible={false}>
+            <Path
+              d="M20 10.5H4m7-7-7 7 7 7"
+              fill="none"
+              stroke="#41403B"
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+          <LcdLabel text="BACK" color="#41403B" scale={1.9} spoken={false} />
+        </MetalKey>
+      </View>
+    </View>
   );
 };
+
+function SettingsRow({
+  label,
+  children,
+  tall,
+  spoken = true,
+}: {
+  label: string;
+  children: React.ReactNode;
+  tall?: boolean;
+  spoken?: boolean;
+}) {
+  return (
+    <View style={[styles.row, tall && styles.flashRow]}>
+      <LcdLabel text={label} scale={1.58} color={WHITE} spoken={spoken} />
+      {children}
+    </View>
+  );
+}
+
+function Choice({
+  label,
+  accessibilityLabel = label,
+  onPress,
+  selected,
+  preset,
+  wide,
+}: {
+  label: string;
+  accessibilityLabel?: string;
+  onPress: () => void;
+  selected?: boolean;
+  preset?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole={selected === undefined ? 'button' : 'radio'}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={
+        selected === undefined ? undefined : {checked: selected}
+      }
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.choiceTarget,
+        preset && styles.presetTarget,
+        pressed && styles.pressed,
+      ]}>
+      <View
+        style={[
+          styles.choice,
+          preset && styles.presetChoice,
+          wide && styles.wideChoice,
+          selected && styles.selected,
+        ]}>
+        <LcdLabel
+          text={label}
+          scale={1.45}
+          color={selected ? INK : WHITE}
+          spoken={false}
+        />
+      </View>
+    </Pressable>
+  );
+}
+
+function ToggleRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <SettingsRow label={label} spoken={false}>
+      <Pressable
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{checked: value}}
+        onPress={() => onChange(!value)}
+        style={({pressed}) => [styles.toggleTarget, pressed && styles.pressed]}>
+        <View style={[styles.toggle, value && styles.toggleOn]}>
+          <View style={styles.thumb} />
+        </View>
+      </Pressable>
+    </SettingsRow>
+  );
+}
 
 export default observer(SettingsScreen);
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
+  screen: {flex: 1, backgroundColor: '#10131B'},
   header: {
+    minHeight: 45,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
+    gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: 'white',
+    borderBottomColor: '#51545C',
+    backgroundColor: 'rgba(20, 24, 33, 0.44)',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  scroll: {flex: 1},
+  row: {
+    minHeight: 50,
+    paddingHorizontal: 4,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#51545C',
   },
-  backButton: {
-    position: 'absolute',
-    left: 16,
+  flashRow: {minHeight: 68, paddingVertical: 5},
+  options: {flexDirection: 'row', gap: 7},
+  look: {
+    paddingTop: 17,
+    paddingBottom: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#51545C',
   },
-  backButtonText: {
-    color: '#2196F3',
-    fontSize: 16,
-  },
-  content: {
-    flex: 1,
-  },
-  settingItem: {
+  presets: {
+    marginTop: 9,
+    marginHorizontal: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    columnGap: 8,
+  },
+  choiceTarget: {minHeight: 44, justifyContent: 'center'},
+  presetTarget: {width: '48.5%', minHeight: 38},
+  choice: {
+    minHeight: 27,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    marginBottom: 1,
+    backgroundColor: 'rgba(232, 229, 218, 0.055)',
+    borderWidth: 1.25,
+    borderColor: '#8C8984',
+    borderRadius: 5,
   },
-  settingLabel: {
-    fontSize: 16,
+  presetChoice: {minHeight: 30},
+  wideChoice: {minWidth: 66, paddingHorizontal: 11},
+  selected: {backgroundColor: AMBER, borderColor: AMBER},
+  pressed: {opacity: 0.75},
+  toggleTarget: {
+    minHeight: 44,
+    minWidth: 46,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
   },
-  settingOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    flex: 1,
-    marginLeft: 12,
+  toggle: {
+    width: 45,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.25,
+    borderColor: '#898783',
+    backgroundColor: '#22242A',
+    justifyContent: 'center',
+    paddingHorizontal: 1.25,
   },
-  settingBlock: {
-    padding: 16,
-    backgroundColor: 'white',
-    marginBottom: 1,
+  toggleOn: {
+    backgroundColor: AMBER,
+    borderColor: AMBER,
+    alignItems: 'flex-end',
   },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10,
+  thumb: {
+    width: 19,
+    height: 19,
+    borderRadius: 10,
+    borderWidth: 0.8,
+    borderColor: '#9E968C',
+    backgroundColor: '#DCD3C8',
   },
-  optionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    marginLeft: 8,
-    backgroundColor: '#f0f0f0',
+  footer: {
+    alignItems: 'center',
+    paddingTop: 10,
+    backgroundColor: '#DCD0C4',
   },
-  optionButtonActive: {
-    backgroundColor: '#2196F3',
-  },
-  optionText: {
-    fontSize: 14,
-    color: 'black',
-  },
+  back: {width: 202, height: 55, flexDirection: 'row', gap: 11},
 });

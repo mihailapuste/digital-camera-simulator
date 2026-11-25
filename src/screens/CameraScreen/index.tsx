@@ -19,6 +19,7 @@ const CameraScreen: React.FC = () => {
   const device = useCameraDevice(settingsStore.cameraPosition);
   const photoOutput = usePhotoOutput({
     targetResolution: CommonResolutions.QHD_4_3,
+    containerFormat: 'jpeg',
   });
 
   useEffect(() => {

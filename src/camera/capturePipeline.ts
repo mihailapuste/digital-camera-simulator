@@ -50,7 +50,7 @@ export type BakeCaptureDeps = {
 
 export type BakedCapture = {
   uri: string;
-  savedToRoll: boolean;
+  savedToRoll: Promise<boolean>;
   width: number;
   height: number;
   presetId: string;
@@ -81,15 +81,13 @@ export async function bakeCapture(
     if (!uri) {
       throw new Error('The in-app gallery did not keep the photo');
     }
-    let savedToRoll = false;
-    if (input.saveToRoll && deps.saveRoll) {
-      try {
-        const rollId = await deps.saveRoll(uri);
-        savedToRoll = rollId != null;
-      } catch (error) {
-        console.error('Could not copy the photo to the camera roll:', error);
-      }
-    }
+    // The in-app photo is ready for review even while Photos asks for access.
+    const savedToRoll = input.saveToRoll && deps.saveRoll
+      ? deps.saveRoll(uri).then(id => id != null).catch(error => {
+          console.error('Could not copy the photo to the camera roll:', error);
+          return false;
+        })
+      : Promise.resolve(false);
     return {
       uri,
       savedToRoll,

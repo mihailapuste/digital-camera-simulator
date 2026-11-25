@@ -1,5 +1,11 @@
 import React, {useId} from 'react';
-import {StyleSheet, View} from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import Svg, {Defs, LinearGradient, Path, Rect, Stop} from 'react-native-svg';
 
 const grain = Array.from({length: 100}, (_, index) => {
@@ -31,3 +37,73 @@ export function MetalPanel() {
     </View>
   );
 }
+
+export function MetalKey({
+  label,
+  onPress,
+  style,
+  children,
+}: {
+  label: string;
+  onPress: () => void;
+  style: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({pressed}) => [styles.key, style, pressed && styles.pressed]}>
+      <KeySurface />
+      {children}
+    </Pressable>
+  );
+}
+
+function KeySurface() {
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
+  return (
+    <View pointerEvents="none" style={styles.keySurface}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id={id} x2="0" y2="1">
+            <Stop offset="0" stopColor="#F5EBDF" />
+            <Stop offset="0.55" stopColor="#DED3C7" />
+            <Stop offset="1" stopColor="#BEB0A0" />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  key: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 30,
+    borderColor: '#4C4135',
+    borderWidth: 1.5,
+    backgroundColor: '#9F9181',
+    shadowColor: '#211C17',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.5,
+    shadowRadius: 2.5,
+    elevation: 4,
+  },
+  keySurface: {
+    position: 'absolute',
+    left: 1.5,
+    right: 1.5,
+    top: 1.5,
+    bottom: 1.5,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: '#FFF4E5',
+    borderBottomColor: '#9D8E7C',
+    overflow: 'hidden',
+  },
+  pressed: {opacity: 0.8},
+});

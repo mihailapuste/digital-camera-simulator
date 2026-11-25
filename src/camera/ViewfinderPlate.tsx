@@ -1,7 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {Canvas, Group, RoundedRect} from '@shopify/react-native-skia';
-import {Image} from 'expo-image';
 import {shotCounterLayout} from '../lcd/buildLcdScene';
 import {formatShots} from '../lcd/format';
 import {LCD_VIEWBOX} from '../lcd/types';
@@ -15,7 +14,6 @@ import {
 
 type ViewfinderPlateProps = {
   preview?: React.ReactNode;
-  reviewUri?: string | null;
   presetId: string;
   stamp: DateStampOptions | null;
   hudShotsRemaining?: number;
@@ -144,7 +142,6 @@ function Grid() {
  */
 export function ViewfinderPlate({
   preview,
-  reviewUri,
   presetId,
   stamp,
   hudShotsRemaining,
@@ -177,21 +174,12 @@ export function ViewfinderPlate({
             : {width, height},
         );
       }}>
-      {reviewUri ? (
-        <Image
-          testID="review-still"
-          source={{uri: reviewUri}}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-        />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, mono && styles.monoPreview]}>
-          {preview}
-        </View>
-      )}
-      {!reviewUri && preview ? <GradeWash preset={preset} /> : null}
-      {showGrid && !reviewUri ? <Grid /> : null}
-      {!reviewUri && stamp ? (
+      <View style={[StyleSheet.absoluteFill, mono && styles.monoPreview]}>
+        {preview}
+      </View>
+      {preview ? <GradeWash preset={preset} /> : null}
+      {showGrid ? <Grid /> : null}
+      {stamp ? (
         <LiveStamp
           key={stampKey}
           width={size.width}
@@ -202,9 +190,9 @@ export function ViewfinderPlate({
           bottomInset={stampInsetBottom}
         />
       ) : null}
-      {busy && !reviewUri ? (
+      {busy ? (
         <View style={styles.busy} pointerEvents="none">
-          <Text style={styles.busyText}>BUSY</Text>
+          <Text style={styles.busyText}>SAVING</Text>
         </View>
       ) : null}
     </View>
@@ -241,9 +229,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   busyText: {
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     color: '#F4F7FB',
     letterSpacing: 4,
     fontSize: 18,
