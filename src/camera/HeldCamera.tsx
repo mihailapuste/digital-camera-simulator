@@ -1,12 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {
-  BackHandler,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import {BackHandler, StyleSheet, useWindowDimensions, View} from 'react-native';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {StatusBar} from 'expo-status-bar';
@@ -23,6 +16,7 @@ import {hardwareFlash} from './hardwareFlash';
 import {playShutterClick, triggerShutterHaptic} from './shutterFeedback';
 import {lcdDateLabel, stampFromSettings} from './stampOptions';
 import {PresetPicker} from './PresetPicker';
+import {ExpandedCameraControls} from './ExpandedCameraControls';
 import {ViewfinderPlate} from './ViewfinderPlate';
 import {restingZoom, stepZoom} from './zoom';
 import {sidewaysFrame} from './sidewaysFrame';
@@ -196,6 +190,10 @@ export const HeldCamera = observer(function HeldCamera({
   };
 
   const takePhoto = () => void shutter();
+  const zoomIn = () =>
+    setZoom(current => stepZoom(current, 'in', minZoom, maxZoom));
+  const zoomOut = () =>
+    setZoom(current => stepZoom(current, 'out', minZoom, maxZoom));
   const preview = (
     <ViewfinderPlate
       preview={renderPreview({
@@ -227,32 +225,18 @@ export const HeldCamera = observer(function HeldCamera({
             }>
             {preview}
           </View>
-          <View
-            testID="expanded-viewfinder-controls"
-            onLayout={event =>
-              setActionBarHeight(event.nativeEvent.layout.height)
-            }
-            style={[
-              styles.actionBar,
-              {
-                paddingLeft: Math.max(12, insets.left),
-                paddingRight: Math.max(12, insets.right),
-                paddingBottom: Math.max(8, insets.bottom),
-              },
-            ]}>
-            <ViewfinderAction
-              label="Camera body"
-              onPress={() => setExpanded(false)}
-            />
-            <ViewfinderAction label="Presets" onPress={openPresets} />
-            <ViewfinderAction
-              label="Shutter"
-              onPress={takePhoto}
-              disabled={captureDisabled || cameraStore.isCapturing}
-              primary
-            />
-            <ViewfinderAction label="Playback" onPress={openGallery} />
-          </View>
+          <ExpandedCameraControls
+            barHeight={actionBarHeight}
+            zoom={zoom}
+            onBarLayout={setActionBarHeight}
+            onClose={() => setExpanded(false)}
+            onPresets={openPresets}
+            onShutter={takePhoto}
+            onPlayback={openGallery}
+            onZoomOut={zoomOut}
+            onZoomIn={zoomIn}
+            shutterDisabled={captureDisabled || cameraStore.isCapturing}
+          />
         </View>
       ) : (
         <View
@@ -293,12 +277,8 @@ export const HeldCamera = observer(function HeldCamera({
                   : takePhoto
               }
               onFlash={() => settingsStore.cycleFlash()}
-              onZoomIn={() =>
-                setZoom(current => stepZoom(current, 'in', minZoom, maxZoom))
-              }
-              onZoomOut={() =>
-                setZoom(current => stepZoom(current, 'out', minZoom, maxZoom))
-              }
+              onZoomIn={zoomIn}
+              onZoomOut={zoomOut}
               onMode={clearReview}
               onModeLongPress={() => settingsStore.toggleCameraPosition()}
               onReview={openGallery}
@@ -322,67 +302,7 @@ export const HeldCamera = observer(function HeldCamera({
   );
 });
 
-function ViewfinderAction({
-  label,
-  onPress,
-  primary = false,
-  disabled = false,
-}: {
-  label: string;
-  onPress: () => void;
-  primary?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
-      style={({pressed}) => [
-        styles.action,
-        primary && styles.primary,
-        disabled && styles.disabled,
-        pressed && styles.pressed,
-      ]}>
-      <Text style={[styles.actionLabel, primary && styles.primaryLabel]}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: '#111111'},
   stage: {flex: 1},
-  actionBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    paddingTop: 8,
-    backgroundColor: '#181a20',
-  },
-  action: {
-    flex: 1,
-    maxWidth: 144,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#2a2e37',
-  },
-  actionLabel: {
-    color: '#f4f7fb',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  primary: {backgroundColor: '#f5c77d'},
-  primaryLabel: {color: '#1a140d'},
-  disabled: {opacity: 0.45},
-  pressed: {opacity: 0.75},
 });
