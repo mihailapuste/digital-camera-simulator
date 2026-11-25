@@ -7,6 +7,7 @@ export {buildPreviews} from './previewEntry';
 export type {SkinPreview} from './previewEntry';
 export {
   layoutIssues,
+  mapDesignPoint,
   resolveSkinLayout,
   skinAspectRatio,
   toNormalizedRect,
@@ -21,6 +22,7 @@ export {
 export {sceneToSvg} from './sceneToSvg';
 export {
   silverCompactCutout,
+  silverCompactLabels,
   silverCompactLayout,
   silverCompactMeta,
   silverCompactScene,
@@ -34,4 +36,5 @@ export type {
   SkinControlId,
   SkinDefinition,
   SkinLayout,
+  SkinRotation,
 } from './types';

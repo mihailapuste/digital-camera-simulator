@@ -6,12 +6,59 @@ import {
   type SkinLayout,
 } from './types';
 
+function drawnSize(layout: SkinLayout): {width: number; height: number} {
+  if (layout.rotation === 90) {
+    return {width: layout.viewBox.height, height: layout.viewBox.width};
+  }
+  return layout.viewBox;
+}
+
+/**
+ * Design point to viewport pixels. A 90° clockwise turn sends
+ * `(x, y)` to `(designHeight - y, x)` before the contain-fit.
+ */
+export function mapDesignPoint(
+  layout: SkinLayout,
+  viewport: {width: number; height: number},
+  x: number,
+  y: number,
+): {x: number; y: number} {
+  const drawn = drawnSize(layout);
+  const scale =
+    drawn.width > 0 &&
+    drawn.height > 0 &&
+    viewport.width > 0 &&
+    viewport.height > 0
+      ? Math.min(viewport.width / drawn.width, viewport.height / drawn.height)
+      : 0;
+  const offsetX = (viewport.width - drawn.width * scale) / 2;
+  const offsetY = (viewport.height - drawn.height * scale) / 2;
+  const rotated =
+    layout.rotation === 90
+      ? {x: layout.viewBox.height - y, y: x}
+      : {x, y};
+  return {
+    x: offsetX + rotated.x * scale,
+    y: offsetY + rotated.y * scale,
+  };
+}
+
 function mapRect(
+  layout: SkinLayout,
   rect: DesignRect,
   scale: number,
   offsetX: number,
   offsetY: number,
 ): PixelRect {
+  if (layout.rotation === 90) {
+    const designHeight = layout.viewBox.height;
+    return {
+      left: offsetX + (designHeight - (rect.y + rect.height)) * scale,
+      top: offsetY + rect.x * scale,
+      width: rect.height * scale,
+      height: rect.width * scale,
+    };
+  }
   return {
     left: offsetX + rect.x * scale,
     top: offsetY + rect.y * scale,
@@ -28,18 +75,21 @@ export function resolveSkinLayout(
   layout: SkinLayout,
   viewport: {width: number; height: number},
 ): ResolvedSkinLayout {
-  const {width: viewWidth, height: viewHeight} = layout.viewBox;
+  const drawn = drawnSize(layout);
   const scale =
-    viewWidth > 0 && viewHeight > 0 && viewport.width > 0 && viewport.height > 0
-      ? Math.min(viewport.width / viewWidth, viewport.height / viewHeight)
+    drawn.width > 0 &&
+    drawn.height > 0 &&
+    viewport.width > 0 &&
+    viewport.height > 0
+      ? Math.min(viewport.width / drawn.width, viewport.height / drawn.height)
       : 0;
-  const drawnWidth = viewWidth * scale;
-  const drawnHeight = viewHeight * scale;
+  const drawnWidth = drawn.width * scale;
+  const drawnHeight = drawn.height * scale;
   const offsetX = (viewport.width - drawnWidth) / 2;
   const offsetY = (viewport.height - drawnHeight) / 2;
   const controls = {} as ResolvedSkinLayout['controls'];
   for (const id of SKIN_CONTROLS) {
-    controls[id] = mapRect(layout.controls[id], scale, offsetX, offsetY);
+    controls[id] = mapRect(layout, layout.controls[id], scale, offsetX, offsetY);
   }
   return {
     scale,
@@ -51,13 +101,15 @@ export function resolveSkinLayout(
       width: drawnWidth,
       height: drawnHeight,
     },
-    lcd: mapRect(layout.lcd, scale, offsetX, offsetY),
+    lcd: mapRect(layout, layout.lcd, scale, offsetX, offsetY),
     controls,
   };
 }
 
+/** Aspect of the skin as drawn, after `rotation`. */
 export function skinAspectRatio(layout: SkinLayout): number {
-  return layout.viewBox.width / layout.viewBox.height;
+  const drawn = drawnSize(layout);
+  return drawn.width / drawn.height;
 }
 
 /** Fractions of the viewBox. Use `resolveSkinLayout` when the screen aspect differs. */

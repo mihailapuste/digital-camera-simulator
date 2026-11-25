@@ -9,12 +9,23 @@ jest.mock('react-native-vision-camera', () => {
       requestPermission: jest.fn(async () => true),
     }),
     usePhotoOutput: () => ({
+      capturePhoto: jest.fn(async () => ({
+        orientation: 'up',
+        isMirrored: false,
+        width: 1944,
+        height: 2592,
+        getFileDataAsync: async () => new Uint8Array([1, 2, 3]).buffer,
+        dispose: jest.fn(),
+      })),
       capturePhotoToFile: jest.fn(async () => ({
         filePath: '/tmp/photo.jpg',
         width: 100,
         height: 100,
       })),
     }),
+    CommonResolutions: {
+      QHD_4_3: {width: 1944, height: 2592},
+    },
   };
 });
 
@@ -24,10 +35,12 @@ jest.mock('@shopify/react-native-skia', () => {
   const passthrough = ({children}) => React.createElement(View, null, children);
   return {
     Canvas: passthrough,
+    Group: passthrough,
     Image: passthrough,
     Fill: passthrough,
     Shader: passthrough,
     Rect: passthrough,
+    RoundedRect: passthrough,
     FractalNoise: passthrough,
     ImageShader: passthrough,
     useImage: () => null,
@@ -95,20 +108,3 @@ jest.mock('./src/services/photoLibrary', () => ({
   })),
 }));
 
-jest.mock('./src/components/cameraSkins/PowerShotSD1000Skin', () => {
-  const React = require('react');
-  const {View} = require('react-native');
-  function PowerShotSD1000Skin() {
-    return React.createElement(View, null);
-  }
-  return PowerShotSD1000Skin;
-});
-
-jest.mock('./src/components/cameraSkins/RotatedPowerShotSD1000Skin', () => {
-  const React = require('react');
-  const {View} = require('react-native');
-  function RotatedPowerShotSD1000Skin() {
-    return React.createElement(View, null);
-  }
-  return RotatedPowerShotSD1000Skin;
-});

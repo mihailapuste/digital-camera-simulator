@@ -9,7 +9,8 @@ import {
   type Scene,
   type SceneNode,
 } from './sceneModel';
-import type {DesignRect} from './types';
+import type {DesignRect, SkinRotation} from './types';
+import {presentSkinScene} from './presentScene';
 import {buildViewfinderBackdrop} from './viewfinderBackdrop';
 
 export type PreviewSample = {
@@ -45,6 +46,7 @@ export function composeSkinPreview(
   body: Scene,
   hole: DesignRect,
   sample: PreviewSample,
+  rotation?: SkinRotation,
 ): Scene {
   const backdrop = place(buildViewfinderBackdrop(), hole, 'photo');
   const overlay = place(
@@ -62,18 +64,21 @@ export function composeSkinPreview(
     'lcd',
   );
   const skinned = prefixScene(body, 'body');
-  return {
-    viewBox: body.viewBox,
-    gradients: [
-      ...backdrop.scene.gradients,
-      ...skinned.gradients,
-      ...overlay.scene.gradients,
-    ],
-    nodes: [
-      rect(0, 0, body.viewBox.width, body.viewBox.height, {fill: '#E6E1D6'}),
-      backdrop.node,
-      ...skinned.nodes,
-      overlay.node,
-    ],
-  };
+  return presentSkinScene(
+    {
+      viewBox: body.viewBox,
+      gradients: [
+        ...backdrop.scene.gradients,
+        ...skinned.gradients,
+        ...overlay.scene.gradients,
+      ],
+      nodes: [
+        rect(0, 0, body.viewBox.width, body.viewBox.height, {fill: '#E6E1D6'}),
+        backdrop.node,
+        ...skinned.nodes,
+        overlay.node,
+      ],
+    },
+    rotation,
+  );
 }

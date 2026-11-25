@@ -12,12 +12,16 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg';
+import {clockwiseQuarterTransform} from './presentScene';
 import {prefixScene, type Scene, type SceneNode} from './sceneModel';
+import type {SkinRotation} from './types';
 
 type SceneSvgProps = {
   scene: Scene;
   width: number | string;
   height: number | string;
+  /** Draws a landscape scene turned clockwise into a portrait frame. */
+  rotation?: SkinRotation;
 };
 
 function paintOf(node: Exclude<SceneNode, {type: 'group'}>) {
@@ -125,16 +129,27 @@ function renderNode(node: SceneNode, key: string): React.ReactNode {
  * Draws a scene with react-native-svg. Gradient ids are prefixed per instance
  * so several bodies can sit on one web page without colliding.
  */
-export function SceneSvg({scene, width, height}: SceneSvgProps) {
+export function SceneSvg({
+  scene,
+  width,
+  height,
+  rotation = 0,
+}: SceneSvgProps) {
   const rawId = useId();
   const prefix = `s${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
   const drawn = useMemo(() => prefixScene(scene, prefix), [scene, prefix]);
+  const quarter = rotation === 90;
+  const viewWidth = quarter ? scene.viewBox.height : scene.viewBox.width;
+  const viewHeight = quarter ? scene.viewBox.width : scene.viewBox.height;
+  const turn = quarter
+    ? clockwiseQuarterTransform(scene.viewBox.height)
+    : undefined;
 
   return (
     <Svg
       width={width}
       height={height}
-      viewBox={`0 0 ${scene.viewBox.width} ${scene.viewBox.height}`}
+      viewBox={`0 0 ${viewWidth} ${viewHeight}`}
       preserveAspectRatio="xMidYMid meet">
       {drawn.gradients.length > 0 ? (
         <Defs>
@@ -180,7 +195,13 @@ export function SceneSvg({scene, width, height}: SceneSvgProps) {
           )}
         </Defs>
       ) : null}
-      {drawn.nodes.map((node, index) => renderNode(node, `n${index}`))}
+      {turn ? (
+        <G transform={turn}>
+          {drawn.nodes.map((node, index) => renderNode(node, `n${index}`))}
+        </G>
+      ) : (
+        drawn.nodes.map((node, index) => renderNode(node, `n${index}`))
+      )}
     </Svg>
   );
 }
