@@ -1,13 +1,12 @@
-import React, {useState, useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   View,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
-  SafeAreaView,
   Text,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -17,26 +16,40 @@ import {RootStackParamList} from '@navigation/types';
 import {Image} from 'expo-image';
 import {FlashList} from '@shopify/flash-list';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import { showToadlyReportDialog } from '@/services/ToadlyService';
+import {showToadlyReportDialog} from '@/services/ToadlyService';
+import {savePhotosToAlbum} from '@/services/photoLibrary';
+import {sharePlaybackPhotos} from '@/services/sharePhotos';
+import {presentSaveResult, presentShareOutcome} from '@/gallery/alerts';
+import {formatPlaybackDate} from '@/gallery/format';
+import {buildGalleryRows, type GalleryRow} from '@/gallery/groupPhotos';
+import {shareFilename} from '@/gallery/sharePlan';
+import type {GalleryPhoto} from '@/gallery/types';
+import {mono, playback} from '@/gallery/theme';
 
 type GalleryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'Gallery'
 >;
 
+const COLUMNS = 3;
+const GAP = 4;
+
 const GalleryScreen: React.FC = () => {
   const navigation = useNavigation<GalleryScreenNavigationProp>();
   const {cameraStore} = useStores();
   const [loading, setLoading] = useState(true);
-  const {width} = Dimensions.get('window');
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [working, setWorking] = useState<'share' | 'delete' | 'save' | null>(
+    null,
+  );
+  const {width} = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const cell = Math.floor((width - GAP * (COLUMNS + 1)) / COLUMNS);
+  const photos = cameraStore.playbackPhotos;
+  const rows = buildGalleryRows(photos, COLUMNS);
 
-  // Calculate the width of each image in the grid (3 columns with small gaps)
-  const imageSize = (width - 8) / 3;
-
-  // Function to load photos
   const loadPhotos = useCallback(async () => {
-    setLoading(true);
     try {
       await cameraStore.loadPhotos();
     } catch (error) {
@@ -46,172 +59,505 @@ const GalleryScreen: React.FC = () => {
     }
   }, [cameraStore]);
 
-  // Refresh photos whenever the screen is shown, including the first visit.
   useFocusEffect(
     useCallback(() => {
       loadPhotos();
     }, [loadPhotos]),
   );
 
-  // Create a dedicated style for FlashList contentContainerStyle
-  const flashListContentStyle = {
-    padding: 2,
-    paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
+  const leaveSelect = () => {
+    setSelecting(false);
+    setSelected([]);
   };
 
-  const renderItem = ({item, index}: {item: string; index: number}) => (
-    <TouchableOpacity
-      style={styles.imageContainer}
-      onPress={() => {
-        // Navigate to the ImageViewer with the selected image index
-        navigation.navigate('ImageViewer', {initialIndex: index});
-      }}
-      onLongPress={() => {
-        // Show delete confirmation
-        Alert.alert(
-          'Delete Photo',
-          'Are you sure you want to delete this photo?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Delete',
-              style: 'destructive',
-              onPress: () => {
-                cameraStore.removeImage(item);
-                // Reload photos after deletion
-                loadPhotos();
-              },
-            },
-          ],
-          {cancelable: true},
-        );
-      }}>
-      <Image
-        source={{uri: item}}
-        style={[styles.image, {width: imageSize, height: imageSize}]}
-        contentFit="cover"
-      />
-    </TouchableOpacity>
-  );
+  const toggle = (uri: string) => {
+    setSelected(current =>
+      current.includes(uri)
+        ? current.filter(item => item !== uri)
+        : [...current, uri],
+    );
+  };
+
+  const openPhoto = (photo: GalleryPhoto) => {
+    const index = photos.findIndex(item => item.uri === photo.uri);
+    navigation.navigate('ImageViewer', {initialIndex: Math.max(0, index)});
+  };
+
+  const chosen = photos.filter(photo => selected.includes(photo.uri));
+
+  const shareChosen = async () => {
+    if (chosen.length === 0 || working) {
+      return;
+    }
+    setWorking('share');
+    try {
+      presentShareOutcome(await sharePlaybackPhotos(chosen));
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  const saveChosen = async () => {
+    if (chosen.length === 0 || working) {
+      return;
+    }
+    setWorking('save');
+    try {
+      presentSaveResult(
+        await savePhotosToAlbum(
+          chosen.map(photo => ({
+            uri: photo.uri,
+            filename: shareFilename(photo),
+          })),
+        ),
+      );
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  const deleteChosen = () => {
+    if (chosen.length === 0 || working) {
+      return;
+    }
+    const count = chosen.length;
+    Alert.alert(
+      'Delete photos',
+      count === 1
+        ? `Delete ${chosen[0].fileNumber}?`
+        : `Delete ${count} photos?`,
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            for (const photo of chosen) {
+              cameraStore.removeImage(photo.uri);
+            }
+            leaveSelect();
+          },
+        },
+      ],
+    );
+  };
+
+  const renderItem = ({item}: {item: GalleryRow}) => {
+    if (item.kind === 'day') {
+      return (
+        <View style={styles.dayRow}>
+          <Text style={styles.dayLabel}>{item.label}</Text>
+          <Text style={styles.dayCount}>
+            {String(item.count).padStart(3, '0')}
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.photoRow}>
+        {item.photos.map(photo => {
+          const isSelected = selected.includes(photo.uri);
+          return (
+            <TouchableOpacity
+              key={photo.uri}
+              testID={`photo-${photo.fileNumber}`}
+              accessibilityRole="button"
+              accessibilityLabel={`${photo.fileNumber}, ${formatPlaybackDate(photo.timestamp)}`}
+              accessibilityState={{selected: isSelected}}
+              activeOpacity={0.85}
+              onPress={() => {
+                if (selecting) {
+                  toggle(photo.uri);
+                  return;
+                }
+                openPhoto(photo);
+              }}
+              onLongPress={() => {
+                setSelecting(true);
+                setSelected(current =>
+                  current.includes(photo.uri)
+                    ? current
+                    : [...current, photo.uri],
+                );
+              }}
+              style={[
+                styles.cell,
+                {width: cell, height: cell},
+                isSelected && styles.cellSelected,
+              ]}>
+              <Image
+                source={{
+                  uri: photo.uri,
+                  cacheKey: `${photo.name}:${photo.revision}`,
+                }}
+                style={styles.thumb}
+                contentFit="cover"
+                recyclingKey={photo.name}
+              />
+              <View style={styles.caption}>
+                <Text style={styles.fileNumber}>{photo.fileNumber}</Text>
+                <Text style={styles.captionDate}>
+                  {formatPlaybackDate(photo.timestamp)}
+                </Text>
+              </View>
+              {selecting ? (
+                <View style={[styles.check, isSelected && styles.checkOn]}>
+                  <Text style={styles.checkMark}>{isSelected ? '✓' : ''}</Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View
+      style={[styles.container, {paddingTop: insets.top}]}
+      testID="gallery-screen">
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>Back</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Back to camera">
+          <Text style={styles.headerSide}>CAM</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Gallery</Text>
-        <TouchableOpacity onPress={() => showToadlyReportDialog()}>
-          <Text style={styles.needHelpButton}>Need Help?</Text>
-        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>{selecting ? 'SELECT' : 'PLAYBACK'}</Text>
+          <Text style={styles.count}>
+            {selecting
+              ? `${String(selected.length).padStart(3, '0')} PICKED`
+              : `${String(photos.length).padStart(3, '0')} SHOTS`}
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          {selecting ? (
+            <TouchableOpacity onPress={leaveSelect} hitSlop={10}>
+              <Text style={styles.headerSide}>DONE</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity
+                onPress={() => showToadlyReportDialog()}
+                hitSlop={8}
+                accessibilityLabel="Need help">
+                <Text style={styles.help}>?</Text>
+              </TouchableOpacity>
+              {photos.length > 0 ? (
+                <TouchableOpacity
+                  onPress={() => setSelecting(true)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select photos">
+                  <Text style={styles.headerSide}>SEL</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.headerSpacer} />
+              )}
+            </>
+          )}
+        </View>
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingText}>Loading photos...</Text>
+      {loading && photos.length === 0 ? (
+        <View style={styles.empty}>
+          <ActivityIndicator size="large" color={playback.amber} />
+          <Text style={styles.loadingText}>READING CARD</Text>
         </View>
-      ) : cameraStore.images.length > 0 ? (
-        <View style={styles.flashListContainer}>
+      ) : photos.length > 0 ? (
+        <View style={styles.list}>
           <FlashList
-            data={cameraStore.images}
+            testID="gallery-grid"
+            data={rows}
             renderItem={renderItem}
-            keyExtractor={item => item}
-            numColumns={3}
-            contentContainerStyle={flashListContentStyle}
+            keyExtractor={item => item.id}
+            getItemType={item => item.kind}
+            extraData={`${selecting}:${selected.join('|')}:${cell}`}
+            contentContainerStyle={{
+              paddingBottom: (selecting ? 84 : 16) + insets.bottom,
+            }}
           />
         </View>
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No photos yet</Text>
+        <View style={styles.empty} testID="gallery-empty">
+          <View style={styles.lcd}>
+            <Text style={styles.lcdTitle}>NO IMAGE</Text>
+            <Text style={styles.lcdBody}>The card is empty.</Text>
+          </View>
           <TouchableOpacity
             style={styles.cameraButton}
-            onPress={() => navigation.navigate('Camera')}>
-            <Text style={styles.cameraButtonText}>Take Photos</Text>
+            onPress={() => navigation.navigate('Camera')}
+            accessibilityRole="button"
+            accessibilityLabel="Open the camera">
+            <Text style={styles.cameraButtonText}>OPEN CAMERA</Text>
           </TouchableOpacity>
         </View>
       )}
-    </SafeAreaView>
+
+      {selecting ? (
+        <View
+          style={[
+            styles.actionBar,
+            {paddingBottom: Math.max(insets.bottom, 12)},
+          ]}>
+          <ActionButton
+            label="SHARE"
+            disabled={chosen.length === 0 || working != null}
+            onPress={shareChosen}
+          />
+          <ActionButton
+            label="SAVE"
+            disabled={chosen.length === 0 || working != null}
+            onPress={saveChosen}
+          />
+          <ActionButton
+            label="DEL"
+            danger
+            disabled={chosen.length === 0 || working != null}
+            onPress={deleteChosen}
+          />
+        </View>
+      ) : null}
+    </View>
   );
 };
+
+const ActionButton = ({
+  label,
+  onPress,
+  disabled,
+  danger,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) => (
+  <TouchableOpacity
+    style={[styles.action, disabled && styles.actionDisabled]}
+    onPress={onPress}
+    disabled={disabled}
+    accessibilityRole="button">
+    <Text style={[styles.actionText, danger && styles.actionDanger]}>
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: playback.bg,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: playback.line,
+    backgroundColor: playback.chrome,
   },
-  backButton: {
+  headerCenter: {
+    alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerSide: {
+    color: playback.amberSoft,
+    fontFamily: mono,
+    fontSize: 14,
+    letterSpacing: 1,
+    minWidth: 44,
+  },
+  headerSpacer: {
+    width: 44,
+  },
+  help: {
+    color: playback.muted,
+    fontFamily: mono,
     fontSize: 16,
-    color: '#fff',
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    color: playback.text,
+    fontFamily: mono,
+    fontSize: 15,
+    letterSpacing: 2,
   },
-  placeholder: {
-    width: 40,
+  count: {
+    color: playback.muted,
+    fontFamily: mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    marginTop: 2,
   },
-  gridContainer: {
-    backgroundColor: '#000',
-  },
-  imageContainer: {
-    margin: 1,
-  },
-  image: {
-    borderRadius: 2,
-  },
-  loadingContainer: {
+  list: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  dayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: GAP + 2,
+    paddingTop: 14,
+    paddingBottom: 6,
+  },
+  dayLabel: {
+    color: playback.amber,
+    fontFamily: mono,
+    fontSize: 16,
+    letterSpacing: 2,
+  },
+  dayCount: {
+    color: playback.muted,
+    fontFamily: mono,
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  photoRow: {
+    flexDirection: 'row',
+    gap: GAP,
+    paddingHorizontal: GAP,
+    marginBottom: GAP,
+  },
+  cell: {
+    backgroundColor: '#000',
+    overflow: 'hidden',
+  },
+  cellSelected: {
+    borderWidth: 2,
+    borderColor: playback.amber,
+  },
+  thumb: {
+    width: '100%',
+    height: '100%',
+  },
+  caption: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 3,
+    backgroundColor: playback.scrim,
+  },
+  fileNumber: {
+    color: playback.amberSoft,
+    fontFamily: mono,
+    fontSize: 10,
+    letterSpacing: 0.4,
+  },
+  captionDate: {
+    color: playback.text,
+    fontFamily: mono,
+    fontSize: 9,
+    letterSpacing: 0.6,
+  },
+  check: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 18,
+    height: 18,
+    borderWidth: 1,
+    borderColor: playback.amberSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  checkOn: {
+    backgroundColor: playback.amber,
+    borderColor: playback.amber,
+  },
+  checkMark: {
+    color: '#1A1004',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
   },
   loadingText: {
-    color: '#fff',
-    fontSize: 18,
-    marginTop: 10,
+    color: playback.amber,
+    fontFamily: mono,
+    letterSpacing: 2,
+    marginTop: 14,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  lcd: {
+    width: '100%',
+    maxWidth: 280,
+    borderWidth: 2,
+    borderColor: playback.lcdEdge,
+    backgroundColor: playback.lcd,
+    paddingVertical: 28,
+    paddingHorizontal: 18,
     alignItems: 'center',
-    padding: 20,
   },
-  emptyText: {
-    color: '#fff',
-    fontSize: 18,
-    marginBottom: 20,
+  lcdTitle: {
+    color: playback.amber,
+    fontFamily: mono,
+    fontSize: 28,
+    letterSpacing: 3,
+  },
+  lcdBody: {
+    color: playback.amberSoft,
+    fontFamily: mono,
+    fontSize: 13,
+    marginTop: 8,
   },
   cameraButton: {
-    backgroundColor: '#555',
+    marginTop: 22,
+    borderWidth: 1,
+    borderColor: playback.amber,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    paddingHorizontal: 22,
   },
   cameraButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: playback.amberSoft,
+    fontFamily: mono,
+    letterSpacing: 1.5,
+    fontSize: 14,
   },
-  flashListContainer: {
+  actionBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    backgroundColor: playback.chrome,
+    borderTopWidth: 1,
+    borderTopColor: playback.line,
+  },
+  action: {
     flex: 1,
-    width: '100%',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: playback.line,
   },
-  needHelpButton: {
-    fontSize: 16,
-    color: '#fff',
+  actionDisabled: {
+    opacity: 0.35,
+  },
+  actionText: {
+    color: playback.amberSoft,
+    fontFamily: mono,
+    letterSpacing: 1,
+    fontSize: 13,
+  },
+  actionDanger: {
+    color: playback.danger,
   },
 });
 
