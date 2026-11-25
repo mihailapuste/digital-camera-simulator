@@ -9,6 +9,7 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg';
+import {MetalPanel} from '../components/MetalPanel';
 
 type Action = 'body' | 'shutter' | 'playback';
 
@@ -105,35 +106,6 @@ function ZoomKey({
         {letter}
       </Text>
     </Pressable>
-  );
-}
-
-const grain = Array.from({length: 100}, (_, index) => {
-  const x = ((index * 71) % 120) - 100;
-  return `M${x} ${index + 0.5}h${280 + ((index * 131) % 260)}`;
-}).join(' ');
-
-function MetalPanel() {
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 400 100"
-        preserveAspectRatio="none">
-        <Defs>
-          <LinearGradient id="panel-metal" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#EDE4D8" />
-            <Stop offset="0.47" stopColor="#D5C9BD" />
-            <Stop offset="1" stopColor="#F3EADC" />
-          </LinearGradient>
-        </Defs>
-        <Rect width="400" height="100" fill="url(#panel-metal)" />
-        <Path d={grain} stroke="#7F6E5B" strokeWidth="0.4" opacity={0.19} />
-        <Path d="M0 1H400" stroke="#FFF9EF" strokeWidth="1.4" />
-        <Path d="M0 3H400" stroke="#9D8D7E" strokeWidth="0.5" />
-      </Svg>
-    </View>
   );
 }
 

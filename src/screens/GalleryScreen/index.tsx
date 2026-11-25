@@ -9,7 +9,12 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {
+  useNavigation,
+  useFocusEffect,
+  useIsFocused,
+} from '@react-navigation/native';
+import {StatusBar} from 'expo-status-bar';
 import {useStores} from '@stores/index';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
@@ -24,6 +29,13 @@ import {buildGalleryRows, type GalleryRow} from '@/gallery/groupPhotos';
 import {shareFilename} from '@/gallery/sharePlan';
 import type {GalleryPhoto} from '@/gallery/types';
 import {mono, playback} from '@/gallery/theme';
+import {
+  EmptyPlaybackCard,
+  PlaybackBackdrop,
+  PlaybackFooter,
+  PlaybackLabel,
+  PlaybackMark,
+} from '@/gallery/PlaybackChrome';
 
 type GalleryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -35,6 +47,7 @@ const GAP = 4;
 
 const GalleryScreen: React.FC = () => {
   const navigation = useNavigation<GalleryScreenNavigationProp>();
+  const focused = useIsFocused();
   const {cameraStore} = useStores();
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState(false);
@@ -223,38 +236,54 @@ const GalleryScreen: React.FC = () => {
         },
       ]}
       testID="gallery-screen">
+      {focused ? <StatusBar style="light" hidden={false} /> : null}
+      <PlaybackBackdrop />
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Back to camera">
-          <Text style={styles.headerSide}>CAM</Text>
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.title}>{selecting ? 'SELECT' : 'PLAYBACK'}</Text>
-          <Text style={styles.count}>
-            {selecting
-              ? `${String(selected.length).padStart(3, '0')} PICKED`
-              : `${String(photos.length).padStart(3, '0')} SHOTS`}
-          </Text>
+        <View style={styles.headerTitle}>
+          <PlaybackMark />
+          <PlaybackLabel
+            text={selecting ? 'SELECT' : 'PLAYBACK'}
+            scale={1.75}
+            color={playback.text}
+          />
         </View>
         <View style={styles.headerActions}>
+          <PlaybackLabel
+            text={
+              selecting
+                ? `${String(selected.length).padStart(3, '0')} PICKED`
+                : `${String(photos.length).padStart(3, '0')} SHOTS`
+            }
+            scale={1.58}
+            color={playback.muted}
+          />
           {selecting ? (
-            <TouchableOpacity onPress={leaveSelect} hitSlop={10}>
-              <Text style={styles.headerSide}>DONE</Text>
+            <TouchableOpacity
+              onPress={leaveSelect}
+              style={styles.headerKey}
+              accessibilityRole="button"
+              accessibilityLabel="Done selecting">
+              <PlaybackLabel
+                text="DONE"
+                scale={1.5}
+                color={playback.amberSoft}
+                spoken={false}
+              />
             </TouchableOpacity>
           ) : photos.length > 0 ? (
             <TouchableOpacity
               onPress={() => setSelecting(true)}
-              hitSlop={10}
+              style={styles.headerKey}
               accessibilityRole="button"
               accessibilityLabel="Select photos">
-              <Text style={styles.headerSide}>SEL</Text>
+              <PlaybackLabel
+                text="SEL"
+                scale={1.5}
+                color={playback.amberSoft}
+                spoken={false}
+              />
             </TouchableOpacity>
-          ) : (
-            <View style={styles.headerSpacer} />
-          )}
+          ) : null}
         </View>
       </View>
 
@@ -273,25 +302,23 @@ const GalleryScreen: React.FC = () => {
             getItemType={item => item.kind}
             extraData={`${selecting}:${selected.join('|')}:${cell}`}
             contentContainerStyle={{
-              paddingBottom: (selecting ? 84 : 16) + insets.bottom,
+              paddingBottom: selecting ? 84 + insets.bottom : 16,
             }}
           />
         </View>
       ) : (
         <View style={styles.empty} testID="gallery-empty">
-          <View style={styles.lcd}>
-            <Text style={styles.lcdTitle}>NO IMAGE</Text>
-            <Text style={styles.lcdBody}>The card is empty.</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.cameraButton}
-            onPress={() => navigation.navigate('Camera')}
-            accessibilityRole="button"
-            accessibilityLabel="Open the camera">
-            <Text style={styles.cameraButtonText}>OPEN CAMERA</Text>
-          </TouchableOpacity>
+          <EmptyPlaybackCard />
         </View>
       )}
+
+      {!selecting ? (
+        <PlaybackFooter
+          bottomInset={insets.bottom}
+          onCamera={() => navigation.goBack()}
+          onSettings={() => navigation.navigate('Settings')}
+        />
+      ) : null}
 
       {selecting ? (
         <View
@@ -356,42 +383,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 21,
+    minHeight: 45,
     borderBottomWidth: 1,
-    borderBottomColor: playback.line,
-    backgroundColor: playback.chrome,
+    borderBottomColor: '#51545C',
+    backgroundColor: 'rgba(20, 24, 33, 0.44)',
   },
-  headerCenter: {
-    alignItems: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerSide: {
-    color: playback.amberSoft,
-    fontFamily: mono,
-    fontSize: 14,
-    letterSpacing: 1,
+  headerTitle: {flexDirection: 'row', alignItems: 'center', gap: 12},
+  headerActions: {flexDirection: 'row', alignItems: 'center', gap: 6},
+  headerKey: {
     minWidth: 44,
-  },
-  headerSpacer: {
-    width: 44,
-  },
-  title: {
-    color: playback.text,
-    fontFamily: mono,
-    fontSize: 15,
-    letterSpacing: 2,
-  },
-  count: {
-    color: playback.muted,
-    fontFamily: mono,
-    fontSize: 10,
-    letterSpacing: 1,
-    marginTop: 2,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     flex: 1,
@@ -487,41 +491,6 @@ const styles = StyleSheet.create({
     fontFamily: mono,
     letterSpacing: 2,
     marginTop: 14,
-  },
-  lcd: {
-    width: '100%',
-    maxWidth: 280,
-    borderWidth: 2,
-    borderColor: playback.lcdEdge,
-    backgroundColor: playback.lcd,
-    paddingVertical: 28,
-    paddingHorizontal: 18,
-    alignItems: 'center',
-  },
-  lcdTitle: {
-    color: playback.amber,
-    fontFamily: mono,
-    fontSize: 28,
-    letterSpacing: 3,
-  },
-  lcdBody: {
-    color: playback.amberSoft,
-    fontFamily: mono,
-    fontSize: 13,
-    marginTop: 8,
-  },
-  cameraButton: {
-    marginTop: 22,
-    borderWidth: 1,
-    borderColor: playback.amber,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-  },
-  cameraButtonText: {
-    color: playback.amberSoft,
-    fontFamily: mono,
-    letterSpacing: 1.5,
-    fontSize: 14,
   },
   actionBar: {
     position: 'absolute',
