@@ -43,8 +43,8 @@ export const silverCompactLayout: SkinLayout = {
     zoomOut: {x: 615, y: 32, width: 55, height: 48},
     zoomIn: {x: 681, y: 32, width: 55, height: 48},
     viewfinder: {x: 362, y: 18, width: 67.5, height: 57.5},
-    set: {x: 229, y: 306, width: 54, height: 46},
-    menu: {x: 353, y: 306, width: 54, height: 46},
+    set: {x: 170, y: 309, width: 48, height: 44},
+    menu: {x: 230, y: 309, width: 48, height: 44},
     mode: {x: 615, y: 100, width: 55, height: 48},
     review: {x: 681, y: 100, width: 55, height: 48},
     flash: {x: 494, y: 199, width: 52, height: 52},
@@ -269,11 +269,21 @@ function engraved(text: string, x: number, y: number, color: string): SceneNode 
   return group(pixelTextNodes(text, x, y, 2, color));
 }
 
-function labeledKey(box: DesignRect, label: string): SceneNode {
+function labeledKey(box: DesignRect, label: string, scale = 2): SceneNode {
   return group([
     pillKey(box.x, box.y, box.width, box.height),
-    centeredPixelText(label, box, 2, INK),
+    centeredPixelText(label, box, scale, INK),
   ]);
+}
+
+function lcdKey(hit: DesignRect, label: string): SceneNode {
+  const cap = {
+    x: hit.x + 2,
+    y: hit.y + 6,
+    width: hit.width - 4,
+    height: hit.height - 12,
+  };
+  return labeledKey(cap, label, 1.5);
 }
 
 function center(box: DesignRect) {
@@ -342,8 +352,8 @@ function buildSilverCompactScene(): Scene {
       }),
       rect(100, 336, 60, 4, {rx: 1, fill: '#8A8478'}),
       engraved(silverCompactLabels.dcIn.text, silverCompactLabels.dcIn.x, silverCompactLabels.dcIn.y, ENGRAVED),
-      labeledKey(controls.set, 'SET'),
-      labeledKey(controls.menu, 'MENU'),
+      lcdKey(controls.set, 'SET'),
+      lcdKey(controls.menu, 'MENU'),
       pillKey(controls.mode.x, controls.mode.y, controls.mode.width, controls.mode.height),
       pillKey(controls.review.x, controls.review.y, controls.review.width, controls.review.height),
       cameraGlyph(camera.x - 9, camera.y - 8, RED),
