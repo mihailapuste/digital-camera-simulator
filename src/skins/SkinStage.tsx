@@ -1,5 +1,6 @@
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
+import {sidewaysFrame} from '../camera/sidewaysFrame';
 import {LcdOverlay} from '../lcd/LcdOverlay';
 import type {LcdOverlayProps} from '../lcd/types';
 import {resolveSkinLayout} from './resolveLayout';
@@ -76,15 +77,7 @@ export const SkinStage: React.FC<SkinStageProps> = ({
         <View style={styles.slot}>
           <View
             testID="skin-lcd-rotation"
-            style={[
-              styles.turned,
-              {
-                width: placed.lcd.height,
-                height: placed.lcd.width,
-                left: (placed.lcd.width - placed.lcd.height) / 2,
-                top: (placed.lcd.height - placed.lcd.width) / 2,
-              },
-            ]}>
+            style={sidewaysFrame(placed.lcd.width, placed.lcd.height)}>
             {plate}
           </View>
         </View>
@@ -106,9 +99,5 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFill,
-  },
-  turned: {
-    position: 'absolute',
-    transform: [{rotate: '90deg'}],
   },
 });

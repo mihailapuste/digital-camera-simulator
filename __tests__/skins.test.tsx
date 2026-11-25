@@ -11,17 +11,10 @@ import {
   listSkins,
   mapDesignPoint,
   resolveSkinLayout,
-  sceneToSvg,
-  silverCompactCutout,
-  silverCompactLabels,
   silverCompactLayout,
-  silverCompactScene,
   skinAspectRatio,
 } from '../src/skins';
 import {SKIN_CONTROLS} from '../src/skins/types';
-import {pixelTextWidth} from '../src/lcd/pixelFont';
-import {sceneIssues} from '../src/skins/sceneModel';
-import {roundedRectPath} from '../src/skins/shapes';
 
 test('registry keeps a single silver compact and falls back to it', () => {
   const skins = listSkins();
@@ -33,129 +26,33 @@ test('registry keeps a single silver compact and falls back to it', () => {
   expect(getSkin('silver-compact').lcdTheme).toBe('classic');
 });
 
-test('layout rects sit on the body and describe a square cutout', () => {
+test('the layout maps controls and a 4:3 LCD onto the artwork', () => {
   expect(layoutIssues(silverCompactLayout)).toEqual([]);
-  expect(skinAspectRatio(silverCompactLayout)).toBeCloseTo(360 / 780);
-  expect(sceneIssues(silverCompactScene)).toEqual([]);
-  expect(sceneToSvg(silverCompactScene)).toContain(
-    roundedRectPath(silverCompactCutout),
-  );
-  const {lcd, viewBox} = silverCompactLayout;
-  expect(lcd.width).toBe(lcd.height);
-  expect(
-    (lcd.width * lcd.height) / (viewBox.width * viewBox.height),
-  ).toBeGreaterThan(0.18);
+  expect(skinAspectRatio(silverCompactLayout)).toBeCloseTo(724 / 1282);
+  const {lcd, controls, viewBox} = silverCompactLayout;
+  expect(lcd.width / lcd.height).toBeCloseTo(4 / 3, 1);
+  expect(lcd.width * lcd.height / (viewBox.width * viewBox.height)).toBeGreaterThan(0.3);
+  expect(controls.shutter.x).toBeGreaterThan(controls.zoomIn.x);
+  expect(controls.shutter.y).toBeLessThan(controls.review.y);
+  expect(controls.menu.y).toBe(controls.display.y);
+  expect(controls.menu.x).toBeLessThan(controls.display.x);
+  expect(controls.flash.y + controls.flash.height).toBe(controls.set.y);
+  expect(controls.mode.x + controls.mode.width).toBe(controls.set.x);
+  expect(controls.func.x).toBe(controls.set.x + controls.set.width);
+  expect(controls.viewfinder.y).toBe(controls.set.y + controls.set.height);
 });
 
-test('physical controls map onto the matching parts of the body', () => {
-  const {lcd, controls} = silverCompactLayout;
-  const lcdRight = lcd.x + lcd.width;
-  const lcdBottom = lcd.y + lcd.height;
-  expect(silverCompactLayout.rotation).toBe(90);
-  expect(lcd.width).toBe(lcd.height);
-  expect(controls.set.y - lcdBottom).toBeGreaterThanOrEqual(10);
-  expect(controls.set.width).toBe(controls.menu.width);
-  expect(controls.viewfinder.width).toBe(67.5);
-  expect(controls.viewfinder.height).toBe(57.5);
-  expect(controls.set.height).toBe(controls.menu.height);
-  expect(controls.menu.y).toBe(controls.set.y);
-  expect(controls.menu.x - (controls.set.x + controls.set.width)).toBe(12);
-  expect(controls.set.x).toBeGreaterThanOrEqual(lcd.x);
-  expect(controls.menu.x + controls.menu.width).toBeLessThanOrEqual(lcdRight);
-  expect(controls.shutter.x).toBeGreaterThanOrEqual(lcdRight);
-  expect(controls.zoomOut.y).toBe(controls.zoomIn.y);
-  expect(controls.zoomOut.x).toBeLessThan(controls.zoomIn.x);
-  expect(controls.mode.y).toBe(controls.review.y);
-  expect(controls.mode.x).toBe(controls.zoomOut.x);
-  expect(controls.review.x).toBe(controls.zoomIn.x);
-  expect(controls.display.x).toBe(controls.func.x);
-  expect(silverCompactLayout.viewBox.width - controls.func.x - controls.func.width)
-    .toBeGreaterThanOrEqual(40);
-  expect(controls.display.y).toBeGreaterThan(controls.func.y);
-  expect(controls.flash.x).toBeGreaterThan(lcdRight);
-});
-
-test('resolveSkinLayout turns the landscape back onto a portrait phone', () => {
-  const phone = {width: 360, height: 780};
-  const origin = mapDesignPoint(silverCompactLayout, phone, 0, 0);
-  expect(origin).toEqual({x: 360, y: 0});
-  const bottomLeft = mapDesignPoint(silverCompactLayout, phone, 0, 360);
-  expect(bottomLeft).toEqual({x: 0, y: 0});
-
+test('resolveSkinLayout turns and centers the landscape body in a portrait viewport', () => {
+  const phone = {width: 362, height: 741};
+  expect(mapDesignPoint(silverCompactLayout, phone, 0, 0)).toEqual({
+    x: 362,
+    y: 50,
+  });
   const fitted = resolveSkinLayout(silverCompactLayout, phone);
-  expect(fitted.scale).toBe(1);
-  expect(fitted.offsetX).toBe(0);
-  expect(fitted.frame).toEqual({left: 0, top: 0, width: 360, height: 780});
-  expect(fitted.lcd).toEqual({left: 62, top: 96, width: 236, height: 236});
-  expect(fitted.lcd.width).toBe(fitted.lcd.height);
-  expect(fitted.controls.set.left + fitted.controls.set.width).toBeLessThanOrEqual(
-    fitted.lcd.left + 1,
-  );
-  expect(fitted.controls.set.top).toBeLessThan(fitted.controls.menu.top);
-  expect(fitted.controls.menu.left).toBeLessThan(fitted.lcd.left);
-  expect(fitted.controls.zoomIn.top).toBeGreaterThan(fitted.lcd.top + fitted.lcd.height);
+  expect(fitted.scale).toBe(0.5);
+  expect(fitted.frame).toEqual({left: 0, top: 50, width: 362, height: 641});
+  expect(fitted.lcd).toEqual({left: 40, top: 102, width: 252.5, height: 339});
   expect(fitted.controls.zoomOut.top).toBeLessThan(fitted.controls.zoomIn.top);
-  expect(fitted.controls.display.top).toBeGreaterThan(fitted.lcd.top + fitted.lcd.height);
-  expect(fitted.controls.display.left).toBeLessThan(fitted.controls.func.left);
-
-  const half = resolveSkinLayout(silverCompactLayout, {
-    width: 180,
-    height: 390,
-  });
-  expect(half.scale).toBeCloseTo(0.5);
-  expect(half.lcd.left).toBeCloseTo(31);
-  expect(half.lcd.width).toBeCloseTo(118);
-  expect(half.lcd.height).toBeCloseTo(118);
-
-  const tall = resolveSkinLayout(silverCompactLayout, {
-    width: 360,
-    height: 1000,
-  });
-  expect(tall.offsetY).toBeCloseTo(110);
-  expect(tall.lcd.top).toBeCloseTo(206);
-
-  const wide = resolveSkinLayout(silverCompactLayout, {
-    width: 800,
-    height: 780,
-  });
-  expect(wide.offsetX).toBeCloseTo(220);
-  expect(wide.lcd.left).toBeCloseTo(282);
-  expect(wide.frame.width).toBeCloseTo(360);
-});
-
-function rectsOverlap(
-  a: {x: number; y: number; width: number; height: number},
-  b: {x: number; y: number; width: number; height: number},
-): boolean {
-  return (
-    a.x + a.width > b.x + 0.5 &&
-    b.x + b.width > a.x + 0.5 &&
-    a.y + a.height > b.y + 0.5 &&
-    b.y + b.height > a.y + 0.5
-  );
-}
-
-test('engraved labels use the pixel font and sit clear of the buttons', () => {
-  const glyph = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-';
-  const labels = Object.values(silverCompactLabels);
-  for (const label of labels) {
-    expect(pixelTextWidth(label.text, 2)).toBeLessThanOrEqual(label.width + 0.01);
-    expect([...label.text].every(character => glyph.includes(character))).toBe(
-      true,
-    );
-    expect(label.x).toBeGreaterThanOrEqual(8);
-    expect(label.y).toBeGreaterThanOrEqual(8);
-    expect(label.x + label.width).toBeLessThanOrEqual(772);
-    expect(label.y + label.height).toBeLessThanOrEqual(354);
-    expect(rectsOverlap(label, silverCompactLayout.lcd)).toBe(false);
-    for (const id of SKIN_CONTROLS) {
-      expect(rectsOverlap(label, silverCompactLayout.controls[id])).toBe(false);
-    }
-  }
-  expect(silverCompactLabels.dcIn.x + silverCompactLabels.dcIn.width).toBeLessThan(
-    silverCompactLayout.controls.set.x,
-  );
-
 });
 
 test('the body stays inside the frame on small and tall phones', () => {
@@ -189,10 +86,6 @@ test('the body stays inside the frame on small and tall phones', () => {
   }
 });
 
-test('skin svg snapshot', () => {
-  expect(sceneToSvg(silverCompactScene)).toMatchSnapshot();
-});
-
 test('buttons call their handlers and the lcd slot is positioned', async () => {
   const handlers = {
     onShutter: jest.fn(),
@@ -210,7 +103,7 @@ test('buttons call their handlers and the lcd slot is positioned', async () => {
   let renderer: ReactTestRenderer.ReactTestRenderer;
   await ReactTestRenderer.act(() => {
     renderer = ReactTestRenderer.create(
-      <SilverCompactSkin width={360} height={780} {...handlers}>
+      <SilverCompactSkin width={724} height={1282} {...handlers}>
         <View testID="lcd-child" />
       </SilverCompactSkin>,
     );
@@ -218,10 +111,10 @@ test('buttons call their handlers and the lcd slot is positioned', async () => {
   const slot = renderer!.root.findByProps({testID: 'skin-lcd-slot'});
   const slotStyle = StyleSheet.flatten(slot.props.style);
   expect(slotStyle).toMatchObject({
-    left: 62,
-    top: 96,
-    width: 236,
-    height: 236,
+    left: 80,
+    top: 104,
+    width: 505,
+    height: 678,
   });
   expect(renderer!.root.findByProps({testID: 'lcd-child'})).toBeTruthy();
 
@@ -267,8 +160,8 @@ test('SkinStage nests the preview and themed overlay in the cutout', async () =>
   await ReactTestRenderer.act(() => {
     renderer = ReactTestRenderer.create(
       <SkinStage
-        width={360}
-        height={780}
+        width={724}
+        height={1282}
         preview={<Text testID="live-preview">preview</Text>}
         onExpandViewfinder={expand}
         lcd={{
@@ -284,8 +177,8 @@ test('SkinStage nests the preview and themed overlay in the cutout', async () =>
   });
   const turned = renderer!.root.findByProps({testID: 'skin-lcd-rotation'});
   const turnedStyle = StyleSheet.flatten(turned.props.style);
-  expect(turnedStyle.width).toBe(236);
-  expect(turnedStyle.height).toBe(236);
+  expect(turnedStyle.width).toBe(678);
+  expect(turnedStyle.height).toBe(505);
   expect(turnedStyle.transform).toEqual([{rotate: '90deg'}]);
   expect(renderer!.root.findByProps({testID: 'live-preview'})).toBeTruthy();
   renderer!.root.findByProps({testID: 'expand-camera-preview'}).props.onPress();
@@ -300,25 +193,23 @@ test('SkinStage nests the preview and themed overlay in the cutout', async () =>
   ).toHaveLength(0);
 
   await ReactTestRenderer.act(() => {
-    renderer!.update(<SkinStage width={780} height={360} rotation={0} />);
+    renderer!.update(<SkinStage width={1282} height={724} rotation={0} />);
   });
   expect(renderer!.root.findAllByProps({testID: 'skin-lcd-rotation'})).toHaveLength(0);
   expect(
     StyleSheet.flatten(renderer!.root.findByProps({testID: 'skin-lcd-slot'}).props.style),
-  ).toMatchObject({left: 96, top: 62, width: 236, height: 236});
+  ).toMatchObject({left: 104, top: 139, width: 678, height: 505});
 });
 
 test('the headless preview is the silver compact with the period hud', () => {
-  const previews = buildPreviews();
+  const previews = buildPreviews('body.png', 'harbor.jpg');
   expect(previews.map(preview => preview.filename)).toEqual([
     'silver-compact.png',
   ]);
   const [silver] = previews;
-  expect(silver.svg).toContain('rotate(90)');
-  expect(silver.svg).toContain('viewBox="0 0 360 780"');
+  expect(silver.svg).toContain('viewBox="0 0 1282 724"');
+  expect(silver.svg).toContain('xlink:href="body.png"');
+  expect(silver.svg).toContain('xlink:href="harbor.jpg"');
   expect(silver.svg).toContain('#F4F7FB');
-  expect(silver.svg).toContain('#121722');
-  expect(silver.svg).toContain('#D64545');
-  expect(silver.svg).not.toContain('Canon');
-  expect(silver.svg).not.toContain('PowerShot');
+  expect(silver.svg).toContain('#91F647');
 });

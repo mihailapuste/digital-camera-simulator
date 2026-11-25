@@ -3,7 +3,7 @@
     "name": "DigiCamSim",
     "slug": "digicamsim",
     "version": "0.0.1",
-    "orientation": "portrait",
+    "orientation": "landscape",
     "icon": "./assets/icon.png",
     "scheme": "digicamsim",
     "userInterfaceStyle": "light",
@@ -12,7 +12,10 @@
       "requireFullScreen": true,
       "bundleIdentifier": "com.digicamsim",
       "infoPlist": {
-        "UISupportedInterfaceOrientations~ipad": ["UIInterfaceOrientationPortrait"],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
         "NSCameraUsageDescription": "DigiCamSim needs access to your camera to take photos.",
         "NSPhotoLibraryUsageDescription": "DigiCamSim needs access to your photo library.",
         "NSPhotoLibraryAddUsageDescription": "DigiCamSim saves photos to your library."

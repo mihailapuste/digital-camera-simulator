@@ -68,7 +68,7 @@ function mapRect(
 }
 
 /**
- * Fit the skin inside a viewport the way the SVG `meet` alignment does,
+ * Fit the skin inside a viewport with the same aspect ratio as the artwork,
  * then return pixel rects for the LCD and every button.
  */
 export function resolveSkinLayout(
@@ -167,8 +167,8 @@ export function layoutIssues(layout: SkinLayout): string[] {
     issues.push('shutter is too small');
   }
   const ratio = layout.lcd.width / layout.lcd.height;
-  if (Math.abs(ratio - 1) > 0.02) {
-    issues.push('lcd is not square');
+  if (Math.abs(ratio - 4 / 3) > 0.02) {
+    issues.push('lcd is not 4:3');
   }
   if ((layout.lcd.width * layout.lcd.height) / (width * height) < 0.12) {
     issues.push('lcd covers less than 12% of the skin');

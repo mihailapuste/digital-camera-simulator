@@ -1,4 +1,5 @@
 import React from 'react';
+import {DemoViewfinder} from '@/camera/DemoViewfinder';
 import {HeldCamera} from '@/camera/HeldCamera';
 
 function pickImageFile(): Promise<string | null> {
@@ -33,8 +34,7 @@ const CameraScreen: React.FC = () => {
       hasFlash={false}
       minZoom={1}
       maxZoom={4}
-      emptyLabel="PUSH SHUTTER"
-      renderPreview={() => null}
+      renderPreview={({zoom}) => <DemoViewfinder zoom={zoom} />}
       grabPhoto={async () => {
         const dataUrl = await pickImageFile();
         if (!dataUrl) {

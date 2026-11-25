@@ -90,7 +90,7 @@ export const LcdOverlay: React.FC<LcdOverlayProps> = ({
   });
   const brackets = buildFocusBracketScene(
     resolved,
-    focus === 'locked' ? 'locked' : 'searching',
+    focus,
     square,
   );
   const batteryBand = batteryLevel <= 0.2 ? 'low' : 'ok';

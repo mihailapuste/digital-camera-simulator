@@ -21,7 +21,6 @@ type ViewfinderPlateProps = {
   hudShotsRemaining?: number;
   showGrid: boolean;
   busy: boolean;
-  emptyLabel?: string;
 };
 
 function safePreset(id: string): CcdPreset {
@@ -147,7 +146,6 @@ export function ViewfinderPlate({
   hudShotsRemaining,
   showGrid,
   busy,
-  emptyLabel,
 }: ViewfinderPlateProps) {
   const preset = safePreset(presetId);
   const [size, setSize] = useState({width: 0, height: 0});
@@ -197,11 +195,6 @@ export function ViewfinderPlate({
           rightInset={stampRightInset}
         />
       ) : null}
-      {!preview && !reviewUri ? (
-        <View style={styles.empty} pointerEvents="none">
-          <Text style={styles.emptyTitle}>{emptyLabel ?? 'PUSH SHUTTER'}</Text>
-        </View>
-      ) : null}
       {busy && !reviewUri ? (
         <View style={styles.busy} pointerEvents="none">
           <Text style={styles.busyText}>BUSY</Text>
@@ -236,18 +229,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.45)',
-  },
-  empty: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#6678a4',
-  },
-  emptyTitle: {
-    color: '#F4F7FB',
-    fontSize: 18,
-    letterSpacing: 2,
-    fontWeight: '700',
   },
   busy: {
     ...StyleSheet.absoluteFill,

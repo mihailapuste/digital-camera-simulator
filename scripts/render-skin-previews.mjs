@@ -4,7 +4,7 @@
  * or with those packages available on NODE_PATH.
  */
 import {execFileSync} from 'node:child_process';
-import {mkdirSync, writeFileSync} from 'node:fs';
+import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -32,7 +32,13 @@ const {Resvg} = require('@resvg/resvg-js');
 const outDir = join(root, 'src/skins/previews');
 mkdirSync(outDir, {recursive: true});
 
-for (const preview of buildPreviews()) {
+const body = readFileSync(join(root, 'assets/lumen-l80.png')).toString('base64');
+const harbor = readFileSync(join(root, 'assets/lumen-harbor.jpg')).toString('base64');
+
+for (const preview of buildPreviews(
+  `data:image/png;base64,${body}`,
+  `data:image/jpeg;base64,${harbor}`,
+)) {
   const resvg = new Resvg(preview.svg, {
     fitTo: {mode: 'width', value: 720},
     background: '#E6E1D6',

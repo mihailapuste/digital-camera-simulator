@@ -1,11 +1,9 @@
 import React from 'react';
 import {CameraBodySkin} from './CameraBodySkin';
-import {
-  silverCompactLayout,
-  silverCompactMeta,
-  silverCompactScene,
-} from './silverCompact';
+import {silverCompactLayout, silverCompactMeta} from './silverCompact';
 import type {CameraSkinProps} from './types';
+
+const bodyArtwork = require('../../assets/lumen-l80.png');
 
 export const SilverCompactSkin: React.FC<CameraSkinProps> = ({
   rotation,
@@ -18,7 +16,6 @@ export const SilverCompactSkin: React.FC<CameraSkinProps> = ({
       ...silverCompactLayout,
       rotation: rotation ?? silverCompactLayout.rotation,
     }}
-    scene={silverCompactScene}
-    surfaceColor="#D4CDC0"
+    artwork={bodyArtwork}
   />
 );

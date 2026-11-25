@@ -49,7 +49,6 @@ type HeldCameraProps = {
     enableRedEyeReduction: boolean;
     enableShutterSound: boolean;
   }) => Promise<GrabbedPhoto | null>;
-  emptyLabel?: string;
   captureDisabled?: boolean;
 };
 
@@ -70,7 +69,6 @@ export const HeldCamera = observer(function HeldCamera({
   maxZoom,
   renderPreview,
   grabPhoto,
-  emptyLabel,
   captureDisabled = false,
 }: HeldCameraProps) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -210,7 +208,6 @@ export const HeldCamera = observer(function HeldCamera({
       hudShotsRemaining={!expanded && overlay ? shotsRemaining : undefined}
       showGrid={settingsStore.showGridLines}
       busy={cameraStore.isCapturing}
-      emptyLabel={emptyLabel}
     />
   );
 
@@ -350,7 +347,7 @@ function ViewfinderAction({
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: '#0c0d10'},
+  root: {flex: 1, backgroundColor: '#111111'},
   stage: {flex: 1},
   actionBar: {
     flexDirection: 'row',

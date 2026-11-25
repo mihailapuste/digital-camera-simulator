@@ -87,7 +87,7 @@ test('classic hud is white glyphs on dark wells, like the compact lcd', () => {
     }),
   );
   expect(theme.icon).toBe('#F4F7FB');
-  expect(theme.iconWell).toBe('#121722');
+  expect(theme.iconWell).toBe('rgba(12, 24, 35, 0.85)');
   expect(svg).toContain(theme.iconWell);
   expect(svg).toContain(theme.icon);
   expect(svg).toContain(theme.bracket);

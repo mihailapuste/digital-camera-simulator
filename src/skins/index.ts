@@ -21,11 +21,8 @@ export {
 } from './registry';
 export {sceneToSvg} from './sceneToSvg';
 export {
-  silverCompactCutout,
-  silverCompactLabels,
   silverCompactLayout,
   silverCompactMeta,
-  silverCompactScene,
 } from './silverCompact';
 export {SKIN_CONTROLS} from './types';
 export type {

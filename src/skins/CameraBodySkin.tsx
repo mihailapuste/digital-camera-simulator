@@ -1,8 +1,8 @@
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
-import {SceneSvg} from './SceneSvg';
+import {Image, type ImageSource} from 'expo-image';
+import {sidewaysFrame} from '../camera/sidewaysFrame';
 import {resolveSkinLayout} from './resolveLayout';
-import type {Scene} from './sceneModel';
 import {
   SKIN_CONTROLS,
   type CameraSkinProps,
@@ -51,41 +51,39 @@ const BUTTONS: Record<
 type CameraBodySkinProps = CameraSkinProps & {
   skinId: string;
   layout: SkinLayout;
-  scene: Scene;
-  surfaceColor: string;
+  artwork: ImageSource | number;
 };
 
 export function CameraBodySkin({
   skinId,
   layout,
-  scene,
-  surfaceColor,
+  artwork,
   width,
   height,
   children,
   ...callbacks
 }: CameraBodySkinProps) {
   const placed = resolveSkinLayout(layout, {width, height});
+  const {frame, lcd, scale} = placed;
   return (
-    <View testID={`skin-${skinId}`} style={{width, height, backgroundColor: surfaceColor}}>
-      <View style={styles.art}>
-        <SceneSvg
-          scene={scene}
-          width={width}
-          height={height}
-          rotation={layout.rotation ?? 0}
+    <View testID={`skin-${skinId}`} style={{width, height}}>
+      <View pointerEvents="none" style={[styles.art, frame]}>
+        <Image
+          source={artwork}
+          contentFit="fill"
+          style={
+            layout.rotation === 90
+              ? sidewaysFrame(frame.width, frame.height)
+              : StyleSheet.absoluteFill
+          }
         />
       </View>
       <View
         testID="skin-lcd-slot"
         style={[
           styles.lcd,
-          {
-            left: placed.lcd.left,
-            top: placed.lcd.top,
-            width: placed.lcd.width,
-            height: placed.lcd.height,
-          },
+          lcd,
+          {borderRadius: (layout.lcdRadius ?? 0) * scale},
         ]}>
         {children}
       </View>
@@ -127,13 +125,13 @@ export function CameraBodySkin({
 
 const styles = StyleSheet.create({
   art: {
-    ...StyleSheet.absoluteFill,
-    pointerEvents: 'none',
+    position: 'absolute',
   },
   lcd: {
     position: 'absolute',
     overflow: 'hidden',
     pointerEvents: 'box-none',
+    backgroundColor: '#11161f',
   },
   hit: {
     position: 'absolute',

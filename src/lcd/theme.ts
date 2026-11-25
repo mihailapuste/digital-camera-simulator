@@ -4,7 +4,7 @@ export const lcdThemes: Record<LcdThemeName, LcdTheme> = {
   classic: {
     text: '#F4F7FB',
     shadow: 'rgba(0,0,0,0.65)',
-    bracket: '#F4F7FB',
+    bracket: '#91F647',
     bracketLocked: '#3DFF6E',
     reviewScrim: 'rgba(8,10,18,0.5)',
     reviewFrame: '#F4F7FB',
@@ -12,7 +12,7 @@ export const lcdThemes: Record<LcdThemeName, LcdTheme> = {
     batteryLow: '#FF5A4A',
     icon: '#F4F7FB',
     redEye: '#FF4B4B',
-    iconWell: '#121722',
+    iconWell: 'rgba(12, 24, 35, 0.85)',
   },
   amber: {
     text: '#FFD27A',

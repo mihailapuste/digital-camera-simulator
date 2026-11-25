@@ -130,15 +130,14 @@ export function redEyeGlyph(
 ): SceneNode {
   const cx = x + width / 2;
   const cy = y + height / 2;
-  const rx = width * 0.32;
-  const ry = height * 0.2;
+  const radius = Math.min(width, height) * 0.32;
   return group([
-    ellipse(cx, cy, rx, ry, {
+    circle(cx, cy, radius, {
       fill: 'none',
       stroke: color,
       strokeWidth: 1.7,
     }),
-    circle(cx, cy, Math.min(rx, ry) * 0.42, {fill: pupil}),
+    circle(cx, cy, radius * 0.3, {fill: pupil}),
   ]);
 }
 
@@ -200,10 +199,16 @@ export function focusWindow(
   color: string,
   strokeWidth: number,
 ): SceneNode {
-  return rect(x, y, width, height, {
-    rx: 1.5,
-    fill: 'none',
-    stroke: color,
-    strokeWidth,
-  });
+  const right = x + width;
+  const bottom = y + height;
+  const arm = 11;
+  return path(
+    [
+      `M${x} ${y + arm} V${y} H${x + arm}`,
+      `M${right - arm} ${y} H${right} V${y + arm}`,
+      `M${right} ${bottom - arm} V${bottom} H${right - arm}`,
+      `M${x + arm} ${bottom} H${x} V${bottom - arm}`,
+    ].join(' '),
+    {fill: 'none', stroke: color, strokeWidth},
+  );
 }

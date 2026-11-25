@@ -9,6 +9,7 @@ import {
 } from 'react-native-vision-camera';
 import {observer} from 'mobx-react-lite';
 import {useStores} from '@stores/index';
+import {DemoViewfinder} from '@/camera/DemoViewfinder';
 import {HeldCamera} from '@/camera/HeldCamera';
 import {sidewaysFrame} from '@/camera/sidewaysFrame';
 
@@ -21,23 +22,26 @@ const CameraScreen: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!hasPermission) {
+    if (device && !hasPermission) {
       void requestPermission();
     }
-  }, [hasPermission, requestPermission]);
+  }, [device, hasPermission, requestPermission]);
 
   return (
     <HeldCamera
       hasFlash={device?.hasFlash === true}
       minZoom={device?.minZoom ?? 1}
-      maxZoom={device?.maxZoom ?? device?.minZoom ?? 1}
-      captureDisabled={hasPermission && !device}
+      maxZoom={device?.maxZoom ?? 4}
+      captureDisabled={!device}
       renderPreview={({zoom, active, sideways}) => {
-        if (!hasPermission || !device) {
+        if (!device) {
+          return <DemoViewfinder zoom={zoom} />;
+        }
+        if (!hasPermission) {
           return (
             <View style={styles.blocked}>
               <Text style={styles.blockedText}>
-                {hasPermission ? 'CAMERA UNAVAILABLE' : 'ALLOW CAMERA ACCESS'}
+                ALLOW CAMERA ACCESS
               </Text>
             </View>
           );
