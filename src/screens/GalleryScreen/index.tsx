@@ -16,7 +16,6 @@ import {RootStackParamList} from '@navigation/types';
 import {Image} from 'expo-image';
 import {FlashList} from '@shopify/flash-list';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {showToadlyReportDialog} from '@/services/ToadlyService';
 import {savePhotosToAlbum} from '@/services/photoLibrary';
 import {sharePlaybackPhotos} from '@/services/sharePhotos';
 import {presentSaveResult, presentShareOutcome} from '@/gallery/alerts';
@@ -237,26 +236,16 @@ const GalleryScreen: React.FC = () => {
             <TouchableOpacity onPress={leaveSelect} hitSlop={10}>
               <Text style={styles.headerSide}>DONE</Text>
             </TouchableOpacity>
+          ) : photos.length > 0 ? (
+            <TouchableOpacity
+              onPress={() => setSelecting(true)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Select photos">
+              <Text style={styles.headerSide}>SEL</Text>
+            </TouchableOpacity>
           ) : (
-            <>
-              <TouchableOpacity
-                onPress={() => showToadlyReportDialog()}
-                hitSlop={8}
-                accessibilityLabel="Need help">
-                <Text style={styles.help}>?</Text>
-              </TouchableOpacity>
-              {photos.length > 0 ? (
-                <TouchableOpacity
-                  onPress={() => setSelecting(true)}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel="Select photos">
-                  <Text style={styles.headerSide}>SEL</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.headerSpacer} />
-              )}
-            </>
+            <View style={styles.headerSpacer} />
           )}
         </View>
       </View>
@@ -378,11 +367,6 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 44,
-  },
-  help: {
-    color: playback.muted,
-    fontFamily: mono,
-    fontSize: 16,
   },
   title: {
     color: playback.text,

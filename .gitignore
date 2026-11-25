@@ -75,7 +75,7 @@ expo-env.d.ts
 /ios
 /android
 
-# Local credentials. The committed stub is src/config/override.ts.
+# Local credentials
 src/config/local.ts
 .env
 .env.local
