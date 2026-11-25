@@ -12,6 +12,7 @@
       "requireFullScreen": true,
       "bundleIdentifier": "com.digicamsim",
       "infoPlist": {
+        "EXDevMenuShowFloatingActionButton": false,
         "UISupportedInterfaceOrientations~ipad": ["UIInterfaceOrientationPortrait"],
         "NSCameraUsageDescription": "DigiCamSim needs access to your camera to take photos.",
         "NSPhotoLibraryUsageDescription": "DigiCamSim needs access to your photo library.",

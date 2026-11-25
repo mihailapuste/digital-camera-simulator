@@ -19,6 +19,8 @@ type ViewfinderPlateProps = {
   presetId: string;
   stamp: DateStampOptions | null;
   hudShotsRemaining?: number;
+  stampInsetRight?: number;
+  stampInsetBottom?: number;
   showGrid: boolean;
   busy: boolean;
 };
@@ -73,11 +75,13 @@ function LiveStamp({
   preset,
   stamp,
   rightInset,
+  bottomInset,
 }: {
   width: number;
   height: number;
   preset: string;
   rightInset: number;
+  bottomInset: number;
   stamp: DateStampOptions | null;
 }) {
   const look = useLookPreview({
@@ -97,7 +101,7 @@ function LiveStamp({
           <RoundedRect
             key={`glow-${index}`}
             x={mark.x - rightInset - 0.6}
-            y={mark.y - 0.6}
+            y={mark.y - bottomInset - 0.6}
             width={mark.width + 1.2}
             height={mark.height + 1.2}
             r={mark.radius}
@@ -110,7 +114,7 @@ function LiveStamp({
           <RoundedRect
             key={`core-${index}`}
             x={mark.x - rightInset}
-            y={mark.y}
+            y={mark.y - bottomInset}
             width={mark.width}
             height={mark.height}
             r={Math.min(mark.radius, mark.width / 2, mark.height / 2)}
@@ -144,6 +148,8 @@ export function ViewfinderPlate({
   presetId,
   stamp,
   hudShotsRemaining,
+  stampInsetRight = 0,
+  stampInsetBottom = 0,
   showGrid,
   busy,
 }: ViewfinderPlateProps) {
@@ -192,7 +198,8 @@ export function ViewfinderPlate({
           height={size.height}
           preset={preset.id}
           stamp={stamp}
-          rightInset={stampRightInset}
+          rightInset={stampRightInset + stampInsetRight}
+          bottomInset={stampInsetBottom}
         />
       ) : null}
       {busy && !reviewUri ? (

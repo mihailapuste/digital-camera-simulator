@@ -79,6 +79,7 @@ export const HeldCamera = observer(function HeldCamera({
   const [stageSize, setStageSize] = useState({width: 0, height: 0});
   const focused = useIsFocused();
   const [expanded, setExpanded] = useState(false);
+  const [actionBarHeight, setActionBarHeight] = useState(0);
   const [overlay, setOverlay] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingPreset, setPendingPreset] = useState(settingsStore.presetId);
@@ -206,6 +207,8 @@ export const HeldCamera = observer(function HeldCamera({
       presetId={activePreset}
       stamp={stamp}
       hudShotsRemaining={!expanded && overlay ? shotsRemaining : undefined}
+      stampInsetRight={expanded && sideways ? actionBarHeight : 0}
+      stampInsetBottom={expanded && !sideways ? actionBarHeight : 0}
       showGrid={settingsStore.showGridLines}
       busy={cameraStore.isCapturing}
     />
@@ -226,6 +229,9 @@ export const HeldCamera = observer(function HeldCamera({
           </View>
           <View
             testID="expanded-viewfinder-controls"
+            onLayout={event =>
+              setActionBarHeight(event.nativeEvent.layout.height)
+            }
             style={[
               styles.actionBar,
               {
