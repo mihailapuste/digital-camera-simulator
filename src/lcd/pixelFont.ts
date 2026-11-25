@@ -1,0 +1,143 @@
+import {group, rect, type SceneNode} from '../skins/sceneModel';
+
+/**
+ * 5×7 pixel glyphs for the early-2000s on-screen display and the
+ * brand-free badges printed on the camera bodies.
+ */
+const ROWS: Record<string, string[]> = {
+  ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
+  '.': ['00000', '00000', '00000', '00000', '00000', '00100', '00100'],
+  '-': ['00000', '00000', '00000', '11111', '00000', '00000', '00000'],
+  '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+  '1': ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+  '2': ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+  '3': ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+  '4': ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+  '5': ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+  '6': ['00111', '01000', '10000', '11110', '10001', '10001', '01110'],
+  '7': ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+  '8': ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+  '9': ['01110', '10001', '10001', '01111', '00001', '00010', '11100'],
+  A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+  B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+  C: ['01111', '10000', '10000', '10000', '10000', '10000', '01111'],
+  D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+  E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+  F: ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+  G: ['01110', '10001', '10000', '10111', '10001', '10001', '01110'],
+  H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+  I: ['01110', '00100', '00100', '00100', '00100', '00100', '01110'],
+  J: ['00111', '00010', '00010', '00010', '00010', '10010', '01100'],
+  K: ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
+  L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+  M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+  N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+  O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+  P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+  Q: ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+  R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+  S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+  T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+  U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+  V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+  W: ['10001', '10001', '10001', '10101', '10101', '10101', '01010'],
+  X: ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
+  Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+  Z: ['11111', '00001', '00010', '00100', '01000', '10000', '11111'],
+};
+
+const GLYPH_WIDTH = 5;
+const GLYPH_HEIGHT = 7;
+
+export function pixelTextWidth(text: string, scale: number): number {
+  if (text.length === 0) {
+    return 0;
+  }
+  return text.length * (GLYPH_WIDTH * scale + scale) - scale;
+}
+
+export function pixelTextHeight(scale: number): number {
+  return GLYPH_HEIGHT * scale;
+}
+
+export function pixelTextNodes(
+  text: string,
+  x: number,
+  y: number,
+  scale: number,
+  color: string,
+): SceneNode[] {
+  const nodes: SceneNode[] = [];
+  let cursor = x;
+  const step = (GLYPH_WIDTH + 1) * scale;
+
+  for (const character of text) {
+    const rows = ROWS[character] ?? ROWS[character.toUpperCase()] ?? ROWS[' '];
+    rows.forEach((row, rowIndex) => {
+      for (let column = 0; column < GLYPH_WIDTH; column += 1) {
+        if (row[column] === '1') {
+          nodes.push(
+            rect(cursor + column * scale, y + rowIndex * scale, scale, scale, {
+              fill: color,
+            }),
+          );
+        }
+      }
+    });
+    cursor += step;
+  }
+
+  return nodes;
+}
+
+export function pixelTextBlock(
+  text: string,
+  x: number,
+  y: number,
+  scale: number,
+  color: string,
+  shadow?: string,
+): SceneNode[] {
+  const offset = Math.max(1, Math.round(scale * 0.35));
+  const shadowNodes = shadow
+    ? pixelTextNodes(text, x + offset, y + offset, scale, shadow)
+    : [];
+  return [...shadowNodes, ...pixelTextNodes(text, x, y, scale, color)];
+}
+
+export function centeredPixelText(
+  text: string,
+  box: {x: number; y: number; width: number; height: number},
+  scale: number,
+  color: string,
+): SceneNode {
+  const width = pixelTextWidth(text, scale);
+  const height = pixelTextHeight(scale);
+  return group(
+    pixelTextNodes(
+      text,
+      box.x + (box.width - width) / 2,
+      box.y + (box.height - height) / 2,
+      scale,
+      color,
+    ),
+  );
+}
+
+export function rightPixelText(
+  text: string,
+  right: number,
+  y: number,
+  scale: number,
+  color: string,
+  shadow?: string,
+): SceneNode[] {
+  return pixelTextBlock(
+    text,
+    right - pixelTextWidth(text, scale),
+    y,
+    scale,
+    color,
+    shadow,
+  );
+}
