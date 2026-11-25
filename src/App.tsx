@@ -7,7 +7,9 @@ import {StyleSheet, Appearance} from 'react-native';
 import {StatusBar} from 'expo-status-bar';
 import {SetupToadly} from '@services/ToadlyService';
 
-Appearance.setColorScheme('light');
+if (typeof Appearance.setColorScheme === 'function') {
+  Appearance.setColorScheme('light');
+}
 
 SetupToadly();
 

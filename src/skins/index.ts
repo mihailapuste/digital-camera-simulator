@@ -7,6 +7,7 @@ export {buildPreviews} from './previewEntry';
 export type {SkinPreview} from './previewEntry';
 export {
   layoutIssues,
+  mapDesignPoint,
   resolveSkinLayout,
   skinAspectRatio,
   toNormalizedRect,
@@ -34,4 +35,5 @@ export type {
   SkinControlId,
   SkinDefinition,
   SkinLayout,
+  SkinRotation,
 } from './types';

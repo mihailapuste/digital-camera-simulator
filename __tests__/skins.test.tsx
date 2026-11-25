@@ -9,6 +9,7 @@ import {
   getSkin,
   layoutIssues,
   listSkins,
+  mapDesignPoint,
   resolveSkinLayout,
   sceneToSvg,
   silverCompactCutout,
@@ -45,52 +46,68 @@ test('layout rects sit on the body and describe a large 4:3 cutout', () => {
 
 test('physical controls map onto the matching parts of the body', () => {
   const {lcd, controls} = silverCompactLayout;
+  const lcdRight = lcd.x + lcd.width;
   const lcdBottom = lcd.y + lcd.height;
-  expect(controls.shutter.y + controls.shutter.height).toBeLessThan(lcd.y);
-  expect(controls.zoomIn.y + controls.zoomIn.height).toBeLessThan(lcd.y);
-  expect(controls.zoomOut.y).toBe(controls.zoomIn.y);
-  expect(controls.power.y).toBeLessThan(lcd.y);
-  expect(controls.set.y).toBeGreaterThan(lcdBottom);
+  expect(silverCompactLayout.rotation).toBe(90);
+  expect(lcd.width / lcd.height).toBeCloseTo(4 / 3, 2);
+  expect(controls.set.y).toBeGreaterThanOrEqual(lcdBottom);
   expect(controls.menu.y).toBe(controls.set.y);
-  expect(controls.mode.y).toBeGreaterThan(controls.set.y);
-  expect(controls.review.y).toBe(controls.mode.y);
-  expect(controls.review.x).toBeGreaterThan(controls.mode.x);
-  expect(controls.flash.y).toBeGreaterThan(controls.mode.y);
-  expect(controls.func.y).toBeGreaterThan(controls.flash.y);
-  expect(controls.display.y).toBe(controls.func.y);
-  expect(controls.display.x).toBeGreaterThan(controls.func.x);
+  expect(controls.set.x).toBeLessThan(controls.menu.x);
+  expect(controls.shutter.x).toBeGreaterThanOrEqual(lcdRight);
+  expect(controls.zoomOut.y).toBe(controls.zoomIn.y);
+  expect(controls.zoomOut.x).toBeLessThan(controls.zoomIn.x);
+  expect(controls.mode.x).toBe(controls.review.x);
+  expect(controls.review.y).toBeLessThan(controls.mode.y);
+  expect(controls.display.x).toBe(controls.func.x);
+  expect(controls.display.y).toBeGreaterThan(controls.func.y);
+  expect(controls.flash.x).toBeGreaterThan(lcdRight);
 });
 
-test('resolveSkinLayout contain-fits the cutout on any viewport', () => {
-  const fitted = resolveSkinLayout(silverCompactLayout, {
-    width: 360,
-    height: 780,
-  });
+test('resolveSkinLayout turns the landscape back onto a portrait phone', () => {
+  const phone = {width: 360, height: 780};
+  const origin = mapDesignPoint(silverCompactLayout, phone, 0, 0);
+  expect(origin).toEqual({x: 360, y: 0});
+  const bottomLeft = mapDesignPoint(silverCompactLayout, phone, 0, 360);
+  expect(bottomLeft).toEqual({x: 0, y: 0});
+
+  const fitted = resolveSkinLayout(silverCompactLayout, phone);
   expect(fitted.scale).toBe(1);
   expect(fitted.offsetX).toBe(0);
-  expect(fitted.lcd).toEqual({left: 22, top: 118, width: 320, height: 240});
+  expect(fitted.frame).toEqual({left: 0, top: 0, width: 360, height: 780});
+  expect(fitted.lcd).toEqual({left: 58, top: 150, width: 234, height: 312});
+  expect(fitted.lcd.height / fitted.lcd.width).toBeCloseTo(4 / 3, 2);
+  expect(fitted.controls.set.left + fitted.controls.set.width).toBeLessThanOrEqual(
+    fitted.lcd.left + 1,
+  );
+  expect(fitted.controls.set.top).toBeLessThan(fitted.controls.menu.top);
+  expect(fitted.controls.menu.left).toBeLessThan(fitted.lcd.left);
+  expect(fitted.controls.zoomIn.left).toBeGreaterThan(fitted.lcd.left + fitted.lcd.width);
+  expect(fitted.controls.zoomOut.top).toBeLessThan(fitted.controls.zoomIn.top);
+  expect(fitted.controls.display.top).toBeGreaterThan(fitted.lcd.top + fitted.lcd.height);
+  expect(fitted.controls.display.left).toBeLessThan(fitted.controls.func.left);
 
   const half = resolveSkinLayout(silverCompactLayout, {
     width: 180,
     height: 390,
   });
   expect(half.scale).toBeCloseTo(0.5);
-  expect(half.lcd.left).toBeCloseTo(11);
-  expect(half.lcd.width).toBeCloseTo(160);
+  expect(half.lcd.left).toBeCloseTo(29);
+  expect(half.lcd.width).toBeCloseTo(117);
+  expect(half.lcd.height).toBeCloseTo(156);
 
   const tall = resolveSkinLayout(silverCompactLayout, {
     width: 360,
     height: 1000,
   });
   expect(tall.offsetY).toBeCloseTo(110);
-  expect(tall.lcd.top).toBeCloseTo(228);
+  expect(tall.lcd.top).toBeCloseTo(260);
 
   const wide = resolveSkinLayout(silverCompactLayout, {
     width: 800,
     height: 780,
   });
   expect(wide.offsetX).toBeCloseTo(220);
-  expect(wide.lcd.left).toBeCloseTo(242);
+  expect(wide.lcd.left).toBeCloseTo(278);
   expect(wide.frame.width).toBeCloseTo(360);
 });
 
@@ -123,10 +140,10 @@ test('buttons call their handlers and the lcd slot is positioned', async () => {
   const slot = renderer!.root.findByProps({testID: 'skin-lcd-slot'});
   const slotStyle = StyleSheet.flatten(slot.props.style);
   expect(slotStyle).toMatchObject({
-    left: 22,
-    top: 118,
-    width: 320,
-    height: 240,
+    left: 58,
+    top: 150,
+    width: 234,
+    height: 312,
   });
   expect(renderer!.root.findByProps({testID: 'lcd-child'})).toBeTruthy();
 
@@ -185,6 +202,11 @@ test('SkinStage nests the preview and themed overlay in the cutout', async () =>
       />,
     );
   });
+  const turned = renderer!.root.findByProps({testID: 'skin-lcd-rotation'});
+  const turnedStyle = StyleSheet.flatten(turned.props.style);
+  expect(turnedStyle.width).toBe(312);
+  expect(turnedStyle.height).toBe(234);
+  expect(turnedStyle.transform).toEqual([{rotate: '90deg'}]);
   expect(renderer!.root.findByProps({testID: 'live-preview'})).toBeTruthy();
   const overlay = renderer!.root.findByProps({testID: 'lcd-overlay'});
   expect(overlay.props.accessibilityLabel).toContain('flash-red-eye');
@@ -202,6 +224,8 @@ test('the headless preview is the silver compact with the period hud', () => {
     'silver-compact.png',
   ]);
   const [silver] = previews;
+  expect(silver.svg).toContain('rotate(90)');
+  expect(silver.svg).toContain('viewBox="0 0 360 780"');
   expect(silver.svg).toContain('#F4F7FB');
   expect(silver.svg).toContain('#121722');
   expect(silver.svg).toContain('#D64545');

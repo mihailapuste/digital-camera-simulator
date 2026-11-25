@@ -37,7 +37,12 @@ export function buildPreviews(): SkinPreview[] {
     id: entry.id,
     filename: `${entry.id}.png`,
     svg: sceneToSvg(
-      composeSkinPreview(entry.scene, entry.layout.lcd, entry.sample),
+      composeSkinPreview(
+        entry.scene,
+        entry.layout.lcd,
+        entry.sample,
+        entry.layout.rotation,
+      ),
     ),
   }));
 }

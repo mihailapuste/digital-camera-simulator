@@ -17,11 +17,23 @@ type SkinHandler = Exclude<
 
 const BUTTONS: Record<
   SkinControlId,
-  {label: string; testID: string; handler: SkinHandler}
+  {
+    label: string;
+    testID: string;
+    handler: SkinHandler;
+    longPress?: SkinHandler;
+    hint?: string;
+  }
 > = {
   shutter: {label: 'Shutter', testID: 'skin-shutter', handler: 'onShutter'},
   flash: {label: 'Flash', testID: 'skin-flash', handler: 'onFlash'},
-  mode: {label: 'Camera', testID: 'skin-mode', handler: 'onMode'},
+  mode: {
+    label: 'Camera',
+    testID: 'skin-mode',
+    handler: 'onMode',
+    longPress: 'onModeLongPress',
+    hint: 'Long press to switch camera',
+  },
   zoomIn: {label: 'Zoom in', testID: 'skin-zoom-in', handler: 'onZoomIn'},
   zoomOut: {label: 'Zoom out', testID: 'skin-zoom-out', handler: 'onZoomOut'},
   review: {label: 'Gallery', testID: 'skin-review', handler: 'onReview'},
@@ -51,7 +63,12 @@ export function CameraBodySkin({
   return (
     <View testID={`skin-${skinId}`} style={{width, height}}>
       <View style={styles.art}>
-        <SceneSvg scene={scene} width={width} height={height} />
+        <SceneSvg
+          scene={scene}
+          width={width}
+          height={height}
+          rotation={layout.rotation ?? 0}
+        />
       </View>
       <View
         testID="skin-lcd-slot"
@@ -70,13 +87,21 @@ export function CameraBodySkin({
         const button = BUTTONS[id];
         const hit = placed.controls[id];
         const onPress = callbacks[button.handler];
+        const onLongPress = button.longPress
+          ? callbacks[button.longPress]
+          : undefined;
         return (
           <Pressable
             key={id}
             testID={button.testID}
             accessibilityRole="button"
             accessibilityLabel={button.label}
+            accessibilityHint={button.hint}
+            delayLongPress={420}
             onPress={typeof onPress === 'function' ? onPress : undefined}
+            onLongPress={
+              typeof onLongPress === 'function' ? onLongPress : undefined
+            }
             style={[
               styles.hit,
               {
@@ -101,7 +126,7 @@ const styles = StyleSheet.create({
   lcd: {
     position: 'absolute',
     overflow: 'hidden',
-    pointerEvents: 'none',
+    pointerEvents: 'box-none',
   },
   hit: {
     position: 'absolute',

@@ -29,8 +29,17 @@ export type SkinControlId = (typeof SKIN_CONTROLS)[number];
  * any viewport with the same contain-fit the SVG uses, so a camera preview
  * lands on the LCD cutout at any screen size.
  */
+/** Clockwise quarter-turns applied when a landscape body is drawn on screen. */
+export type SkinRotation = 0 | 90;
+
 export type SkinLayout = {
   viewBox: {width: number; height: number};
+  /**
+   * `90` turns a landscape camera back clockwise so it fills a portrait phone.
+   * Hit targets and the LCD are stored in the unrotated design and mapped
+   * through the same turn.
+   */
+  rotation?: SkinRotation;
   lcd: DesignRect;
   controls: Record<SkinControlId, DesignRect>;
 };
@@ -69,6 +78,8 @@ export type CameraSkinProps = {
   onMenu?: () => void;
   /** SET. Confirms the current choice. */
   onSet?: () => void;
+  /** Long-press the camera side of the slide to flip front and back. */
+  onModeLongPress?: () => void;
   /** Drawn inside the LCD cutout, above an optional preview. */
   children?: ReactNode;
 };

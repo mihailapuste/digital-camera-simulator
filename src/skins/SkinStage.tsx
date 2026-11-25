@@ -11,6 +11,10 @@ export type SkinStageProps = Omit<CameraSkinProps, 'children'> & {
   /** Fills the LCD cutout underneath the viewfinder overlay. */
   preview?: React.ReactNode;
   lcd?: Partial<LcdOverlayProps>;
+  /** Hide the status glyphs. The preview stays. */
+  showLcd?: boolean;
+  /** Drawn above the status glyphs, still inside the rotated plate. */
+  foreground?: React.ReactNode;
 };
 
 /**
@@ -24,24 +28,51 @@ export const SkinStage: React.FC<SkinStageProps> = ({
   height,
   preview,
   lcd,
+  showLcd = true,
+  foreground,
   ...callbacks
 }) => {
   const skin = getSkin(skinId);
   const placed = resolveSkinLayout(skin.layout, {width, height});
   const Body = skin.Component;
-  return (
-    <Body width={width} height={height} {...callbacks}>
-      <View style={styles.slot}>
-        {preview ? <View style={styles.preview}>{preview}</View> : null}
-        <View style={styles.overlay}>
+  const turned = skin.layout.rotation === 90;
+  const plate = (
+    <>
+      {preview ? <View style={styles.preview}>{preview}</View> : null}
+      {showLcd ? (
+        <View style={styles.overlay} pointerEvents="none">
           <LcdOverlay
             theme={skin.lcdTheme}
             {...lcd}
-            width={placed.lcd.width}
-            height={placed.lcd.height}
+            width="100%"
+            height="100%"
           />
         </View>
-      </View>
+      ) : null}
+      {foreground}
+    </>
+  );
+  return (
+    <Body width={width} height={height} {...callbacks}>
+      {turned ? (
+        <View style={styles.slot}>
+          <View
+            testID="skin-lcd-rotation"
+            style={[
+              styles.turned,
+              {
+                width: placed.lcd.height,
+                height: placed.lcd.width,
+                left: (placed.lcd.width - placed.lcd.height) / 2,
+                top: (placed.lcd.height - placed.lcd.width) / 2,
+              },
+            ]}>
+            {plate}
+          </View>
+        </View>
+      ) : (
+        <View style={styles.slot}>{plate}</View>
+      )}
     </Body>
   );
 };
@@ -50,12 +81,16 @@ const styles = StyleSheet.create({
   slot: {
     width: '100%',
     height: '100%',
-    pointerEvents: 'none',
+    pointerEvents: 'box-none',
   },
   preview: {
     ...StyleSheet.absoluteFill,
   },
   overlay: {
     ...StyleSheet.absoluteFill,
+  },
+  turned: {
+    position: 'absolute',
+    transform: [{rotate: '90deg'}],
   },
 });
