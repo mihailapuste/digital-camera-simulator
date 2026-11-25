@@ -18,7 +18,6 @@ import {PresetPicker} from './PresetPicker';
 import {ExpandedCameraControls} from './ExpandedCameraControls';
 import {ViewfinderPlate} from './ViewfinderPlate';
 import {restingZoom, stepZoom} from './zoom';
-import {sidewaysFrame} from './sidewaysFrame';
 
 const CARD_FRAMES = 68;
 
@@ -190,16 +189,57 @@ export const HeldCamera = observer(function HeldCamera({
   return (
     <View style={styles.root}>
       {focused ? <StatusBar style="dark" hidden={expanded} /> : null}
-      {expanded ? (
-        <View testID="expanded-viewfinder" style={styles.stage}>
-          <View
-            style={
-              sideways
-                ? sidewaysFrame(window.width, window.height)
-                : StyleSheet.absoluteFill
-            }>
-            {preview}
-          </View>
+      <View
+        testID={expanded ? 'expanded-viewfinder' : undefined}
+        style={styles.stage}
+        onLayout={({
+          nativeEvent: {
+            layout: {width, height},
+          },
+        }) =>
+          setStageSize(current =>
+            current.width === width && current.height === height
+              ? current
+              : {width, height},
+          )
+        }>
+        {stageSize.width > 0 && stageSize.height > 0 ? (
+          <SkinStage
+            width={stageSize.width}
+            height={stageSize.height}
+            rotation={sideways ? 90 : 0}
+            safeArea={insets}
+            expanded={expanded}
+            showLcd={!expanded && overlay}
+            preview={preview}
+            lcd={{
+              flashMode: settingsStore.flashMode,
+              shotsRemaining,
+              onOpenPlayback: openGallery,
+              date: lcdDateLabel(settingsStore),
+              focus: cameraStore.isCapturing ? 'locked' : 'idle',
+              mode: 'live',
+              batteryLevel: 1,
+              animated: cameraStore.isCapturing,
+            }}
+            onExpandViewfinder={expanded ? undefined : () => setExpanded(true)}
+            onShutter={
+              captureDisabled || cameraStore.isCapturing
+                ? undefined
+                : takePhoto
+            }
+            onFlash={() => settingsStore.cycleFlash()}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onModeLongPress={() => settingsStore.toggleCameraPosition()}
+            onReview={openGallery}
+            onDisplay={() => setOverlay(value => !value)}
+            onFunc={openPresets}
+            onMenu={openSettings}
+            onSet={openPresets}
+          />
+        ) : null}
+        {expanded ? (
           <ExpandedCameraControls
             barHeight={actionBarHeight}
             zoom={zoom}
@@ -212,58 +252,8 @@ export const HeldCamera = observer(function HeldCamera({
             onZoomIn={zoomIn}
             shutterDisabled={captureDisabled || cameraStore.isCapturing}
           />
-        </View>
-      ) : (
-        <View
-          style={styles.stage}
-          onLayout={({
-            nativeEvent: {
-              layout: {width, height},
-            },
-          }) =>
-            setStageSize(current =>
-              current.width === width && current.height === height
-                ? current
-                : {width, height},
-            )
-          }>
-          {stageSize.width > 0 && stageSize.height > 0 ? (
-            <SkinStage
-              width={stageSize.width}
-              height={stageSize.height}
-              rotation={sideways ? 90 : 0}
-              safeArea={insets}
-              showLcd={overlay}
-              preview={preview}
-              lcd={{
-                flashMode: settingsStore.flashMode,
-                shotsRemaining,
-                onOpenPlayback: openGallery,
-                date: lcdDateLabel(settingsStore),
-                focus: cameraStore.isCapturing ? 'locked' : 'idle',
-                mode: 'live',
-                batteryLevel: 1,
-                animated: cameraStore.isCapturing,
-              }}
-              onExpandViewfinder={() => setExpanded(true)}
-              onShutter={
-                captureDisabled || cameraStore.isCapturing
-                  ? undefined
-                  : takePhoto
-              }
-              onFlash={() => settingsStore.cycleFlash()}
-              onZoomIn={zoomIn}
-              onZoomOut={zoomOut}
-              onModeLongPress={() => settingsStore.toggleCameraPosition()}
-              onReview={openGallery}
-              onDisplay={() => setOverlay(value => !value)}
-              onFunc={openPresets}
-              onMenu={openSettings}
-              onSet={openPresets}
-            />
-          ) : null}
-        </View>
-      )}
+        ) : null}
+      </View>
       <PresetPicker
         visible={menuOpen}
         sideways={sideways && !expanded}

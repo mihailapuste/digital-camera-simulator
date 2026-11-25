@@ -38,6 +38,7 @@ export type SkinLayout = {
    * through the same turn.
    */
   rotation?: SkinRotation;
+  expanded?: boolean;
   lcd: DesignRect;
   /** Outer artwork around the LCD, used to clear the top status bar. */
   lcdBezel?: DesignRect;
@@ -66,6 +67,7 @@ export type CameraSkinProps = {
   width: number;
   height: number;
   rotation?: SkinRotation;
+  expanded?: boolean;
   /** Fill the viewport while keeping the LCD and controls inside these insets. */
   safeArea?: EdgeInsets;
   onShutter?: () => void;

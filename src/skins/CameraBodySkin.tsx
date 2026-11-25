@@ -12,7 +12,7 @@ import {
 
 type SkinHandler = Exclude<
   keyof CameraSkinProps,
-  'width' | 'height' | 'rotation' | 'safeArea' | 'children'
+  'width' | 'height' | 'rotation' | 'safeArea' | 'expanded' | 'children'
 >;
 
 const BUTTONS: Record<
@@ -61,6 +61,7 @@ export function CameraBodySkin({
   width,
   height,
   safeArea,
+  expanded,
   children,
   ...callbacks
 }: CameraBodySkinProps) {
@@ -101,12 +102,12 @@ export function CameraBodySkin({
         testID="skin-lcd-slot"
         style={[
           styles.lcd,
-          lcd,
-          {borderRadius: (layout.lcdRadius ?? 0) * scale},
+          expanded ? StyleSheet.absoluteFill : lcd,
+          {borderRadius: expanded ? 0 : (layout.lcdRadius ?? 0) * scale},
         ]}>
         {children}
       </View>
-      {SKIN_CONTROLS.map(id => {
+      {!expanded && SKIN_CONTROLS.map(id => {
         const button = BUTTONS[id];
         const hit = placed.controls[id];
         const onPress = callbacks[button.handler];
