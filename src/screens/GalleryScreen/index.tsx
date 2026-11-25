@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -14,7 +14,7 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useStores} from '@stores/index';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types';
-import FastImage from 'react-native-fast-image';
+import {Image} from 'expo-image';
 import {FlashList} from '@shopify/flash-list';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import { showToadlyReportDialog } from '@/services/ToadlyService';
@@ -46,12 +46,7 @@ const GalleryScreen: React.FC = () => {
     }
   }, [cameraStore]);
 
-  // Load photos when component mounts
-  useEffect(() => {
-    loadPhotos();
-  }, [loadPhotos]);
-
-  // Refresh photos when the screen comes into focus
+  // Refresh photos whenever the screen is shown, including the first visit.
   useFocusEffect(
     useCallback(() => {
       loadPhotos();
@@ -94,10 +89,10 @@ const GalleryScreen: React.FC = () => {
           {cancelable: true},
         );
       }}>
-      <FastImage
-        source={{uri: `file://${item}`}}
+      <Image
+        source={{uri: item}}
         style={[styles.image, {width: imageSize, height: imageSize}]}
-        resizeMode={FastImage.resizeMode.cover}
+        contentFit="cover"
       />
     </TouchableOpacity>
   );
@@ -109,9 +104,7 @@ const GalleryScreen: React.FC = () => {
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Gallery</Text>
-        <TouchableOpacity
-
-          onPress={() => showToadlyReportDialog()}>
+        <TouchableOpacity onPress={() => showToadlyReportDialog()}>
           <Text style={styles.needHelpButton}>Need Help?</Text>
         </TouchableOpacity>
       </View>
@@ -128,7 +121,6 @@ const GalleryScreen: React.FC = () => {
             renderItem={renderItem}
             keyExtractor={item => item}
             numColumns={3}
-            estimatedItemSize={imageSize}
             contentContainerStyle={flashListContentStyle}
           />
         </View>

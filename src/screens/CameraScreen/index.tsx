@@ -148,7 +148,7 @@ const CameraScreen: React.FC = () => {
           </TouchableOpacity>
           {cameraStore.lastImagePath && (
             <Image
-              source={{uri: `file://${cameraStore.lastImagePath}`}}
+              source={{uri: cameraStore.lastImagePath}}
               style={styles.modalImage}
               resizeMode="contain"
             />

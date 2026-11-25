@@ -1,9 +1,7 @@
 # OSX
-#
 .DS_Store
 
 # Xcode
-#
 build/
 *.pbxuser
 !default.pbxuser
@@ -23,8 +21,6 @@ DerivedData
 **/.xcode.env.local
 
 # Android/IntelliJ
-#
-build/
 .idea
 .gradle
 local.properties
@@ -36,18 +32,12 @@ local.properties
 .kotlin/
 
 # node.js
-#
 node_modules/
 npm-debug.log
+yarn-debug.log*
 yarn-error.log
 
 # fastlane
-#
-# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
-# screenshots whenever they are needed.
-# For more information about the recommended setup visit:
-# https://docs.fastlane.tools/best-practices/source-control/
-
 **/fastlane/report.xml
 **/fastlane/Preview.html
 **/fastlane/screenshots
@@ -55,12 +45,13 @@ yarn-error.log
 
 # Bundle artifact
 *.jsbundle
+*.bundle
 
 # Ruby / CocoaPods
 **/Pods/
 /vendor/bundle/
 
-# Temporary files created by Metro to check the health of the file watcher
+# Metro
 .metro-health-check*
 
 # testing
@@ -74,6 +65,21 @@ yarn-error.log
 !.yarn/sdks
 !.yarn/versions
 
-# config
-**/config/index.ts
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
 
+# Native projects are generated with `npx expo prebuild` (CNG).
+/ios
+/android
+
+# Local credentials. The committed stub is src/config/override.ts.
+src/config/local.ts
+.env
+.env.local
+.env.*.local
+
+# Copied by setup-skia-web during install. Not a source file.
+/public/canvaskit.wasm

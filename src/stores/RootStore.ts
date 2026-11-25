@@ -18,7 +18,7 @@ export const RootStore = types
     },
   }));
 
-export interface IRootStore extends Instance<typeof RootStore> {}
+export type IRootStore = Instance<typeof RootStore>;
 
 // Create the store instance
 export const createRootStore = () => {

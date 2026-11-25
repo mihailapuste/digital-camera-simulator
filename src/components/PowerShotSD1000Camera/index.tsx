@@ -1,12 +1,16 @@
-import React, {useRef, useImperativeHandle, forwardRef} from 'react';
+import React, {useImperativeHandle, forwardRef} from 'react';
 import {View, StyleSheet, Dimensions, SafeAreaView} from 'react-native';
-import {Camera, CameraRuntimeError} from 'react-native-vision-camera';
+import {
+  Camera,
+  CameraDevice,
+  usePhotoOutput,
+} from 'react-native-vision-camera';
 import {observer} from 'mobx-react-lite';
 import {useStores} from '@stores/index';
 import RotatedPowerShotSD1000Skin from '../cameraSkins/RotatedPowerShotSD1000Skin';
 
 interface PowerShotSD1000CameraProps {
-  device: any;
+  device: CameraDevice;
   isActive: boolean;
 }
 
@@ -18,23 +22,24 @@ const PowerShotSD1000Camera = forwardRef<
   PowerShotSD1000CameraHandle,
   PowerShotSD1000CameraProps
 >(({device, isActive}, ref) => {
-  const cameraRef = useRef<Camera>(null);
-  const {cameraStore} = useStores();
+  const photoOutput = usePhotoOutput();
+  const {cameraStore, settingsStore} = useStores();
 
   const takePhoto = async () => {
-    if (cameraRef.current) {
-      try {
-        // Create a properly typed reference to pass to the store
-        const camera = {current: cameraRef.current};
-        // Use the cameraStore's takePhoto method which handles saving the photo properly
-        await cameraStore.takePhoto(camera);
-      } catch (e) {
-        if (e instanceof CameraRuntimeError) {
-          console.error(`Error taking photo: ${e.message}`);
-        } else {
-          console.error('Unknown error taking photo:', e);
-        }
-      }
+    if (cameraStore.isCapturing) {
+      return;
+    }
+    cameraStore.setCapturing(true);
+    try {
+      const photoFile = await photoOutput.capturePhotoToFile(
+        {flashMode: settingsStore.flashMode},
+        {},
+      );
+      await cameraStore.saveCapturedPhoto(photoFile.filePath);
+    } catch (error) {
+      console.error('Error taking photo:', error);
+    } finally {
+      cameraStore.setCapturing(false);
     }
   };
 
@@ -57,22 +62,15 @@ const PowerShotSD1000Camera = forwardRef<
           styles.cameraContainer,
           {width: cameraWidth, height: cameraHeight},
         ]}>
-        {device && (
-          <View style={StyleSheet.absoluteFill}>
-            <Camera
-              ref={cameraRef}
-              format={device.formats[0]} // lowers quality of view
-              style={styles.camera}
-              device={device}
-              isActive={isActive}
-              photo={true}
-              enableZoomGesture={false}
-              videoStabilizationMode="off"
-              photoHdr={true}
-              fps={30} // 40 is not supported on all devices
-            />
-          </View>
-        )}
+        <View style={StyleSheet.absoluteFill}>
+          <Camera
+            style={styles.camera}
+            device={device}
+            isActive={isActive}
+            outputs={[photoOutput]}
+            enableNativeZoomGesture={false}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -105,5 +103,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
+
+PowerShotSD1000Camera.displayName = 'PowerShotSD1000Camera';
 
 export default observer(PowerShotSD1000Camera);

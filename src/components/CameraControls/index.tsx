@@ -34,7 +34,7 @@ const CameraControls: React.FC<CameraControlsProps> = ({
           disabled={!cameraStore.lastImagePath}>
           {cameraStore.lastImagePath ? (
             <Image
-              source={{uri: `file://${cameraStore.lastImagePath}`}}
+              source={{uri: cameraStore.lastImagePath}}
               style={styles.galleryBoxImage}
             />
           ) : (
